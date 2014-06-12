@@ -1,0 +1,4 @@
+# Node stuff
+/node_modules
+# MongoDB directory
+/data
