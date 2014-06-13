@@ -13,3 +13,25 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
+
+var express = require('express');
+var app = express();
+var whiteboard = require('./whiteboard.js');
+var server = app.listen(3000, function() {
+    console.log('Listening on port %d', server.address().port);
+});
+
+app.param('whiteboardId', function(req, res, next, whiteboardId) {
+	req.whiteboardId = whiteboardId;
+	next();
+});
+
+app.get('/whiteboard/:whiteboardId', function(req, res, next) {
+	// Will need to send the client HTML page here
+	// with a url field set to the given URL
+	res.send("Hello!");
+});
+
+app.use(function(req, res, next) {
+	res.send(404, "Couldn't find the page you were looking for.");
+});
