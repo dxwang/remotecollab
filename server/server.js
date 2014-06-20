@@ -14,14 +14,32 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
+var dbconn = require('./dbconn.js');
 var express = require('express');
 var app = express();
-var whiteboard = require('./whiteboard.js');
-var server = app.listen(3000, function() {
-    console.log('Listening on port %d', server.address().port);
-});
+var server;
+// var whiteboard = require('./whiteboard.js');
 
-app.param('whiteboardId', function(req, res, next, whiteboardId) {
+// Server initialization
+function bootstrap() {
+	dbconn.connectToMongoDB(onConnectedToDB);
+}
+function onConnectedToDB(dbConn) {
+	if(dbConn._db) {
+		startServer();
+	} else {
+		console.log("Unable to connect to database -- Server not started.");
+	}
+}
+function startServer() {
+	server = app.listen(3000, function() {
+		console.log('Listening on port %d', server.address().port);
+	});
+}
+
+bootstrap();
+
+/*app.param('whiteboardId', function(req, res, next, whiteboardId) {
 	req.whiteboardId = whiteboardId;
 	next();
 });
@@ -34,4 +52,4 @@ app.get('/whiteboard/:whiteboardId', function(req, res, next) {
 
 app.use(function(req, res, next) {
 	res.send(404, "Couldn't find the page you were looking for.");
-});
+});*/

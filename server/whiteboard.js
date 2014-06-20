@@ -22,22 +22,22 @@ var mongoPort = 27017;
 var dbName = "whiteboard";
 var db;
 
-mongoClient.connect("mongodb://localhost:" + mongoPort + "/" + dbName, function(err, _db) {
-  if(!err) {
-	db = _db;
-    console.log("Connected to database: " + dbName);
-	initializeDB();
-  } else {
-	throw err;
-  }
-});
-
-var initializeDB = function() {
-	// Create the whiteboard collection if necessary
-	db.createCollection("whiteboards", {strict:true}, function(err, collection) {
-		if(!err) {
-			console.log("Created whiteboards collection!");
-		}
+var bootstrap = function(next) {
+	mongoClient.connect("mongodb://localhost:" + mongoPort + "/" + dbName, function(err, _db) {
+	  if(!err) {
+		db = _db;
+		console.log("Connected to database: " + dbName);
+		// Create the whiteboard collection if necessary
+		db.createCollection("whiteboards", {strict:true}, function(err, collection) {
+			if(!err) {
+				console.log("Created whiteboards collection!");
+			}
+		});
+		
+		return next();
+	  } else {
+		console.log("Error occurred trying to connect to DB");
+	  }
 	});
 }
 	
