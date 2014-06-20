@@ -14,18 +14,36 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
+var fs = require('fs');
 var dbconn = require('./dbconn.js');
+var whiteboard = require('./whiteboard.js');
 var express = require('express');
 var app = express();
 var server;
-// var whiteboard = require('./whiteboard.js');
+var io = require('socket.io');
+var sockets;
+var uiHTMLPath = '/../www/index.html';
+var uiHTML;
 
 // Server initialization
 function bootstrap() {
+	loadUIHTML();
+}
+function loadUIHTML() {
+	fs.readFile(__dirname + uiHTMLPath, function(err, data) {
+		if(!err) {
+			uiHTML = data;
+			connectToDB();
+		} else {
+			console.log("Could not load index.html");
+		}
+	});
+}
+function connectToDB() {
 	dbconn.connectToMongoDB(onConnectedToDB);
 }
-function onConnectedToDB(dbConn) {
-	if(dbConn._db) {
+function onConnectedToDB(conn) {
+	if(conn._db) {
 		startServer();
 	} else {
 		console.log("Unable to connect to database -- Server not started.");
@@ -34,22 +52,26 @@ function onConnectedToDB(dbConn) {
 function startServer() {
 	server = app.listen(3000, function() {
 		console.log('Listening on port %d', server.address().port);
+		// Start socket.io
+		startSocketIO();
 	});
+}
+function startSocketIO() {
+	sockets = io.listen(server).sockets;
 }
 
 bootstrap();
 
-/*app.param('whiteboardId', function(req, res, next, whiteboardId) {
+app.param('whiteboardId', function(req, res, next, whiteboardId) {
 	req.whiteboardId = whiteboardId;
 	next();
 });
 
 app.get('/whiteboard/:whiteboardId', function(req, res, next) {
-	// Will need to send the client HTML page here
-	// with a url field set to the given URL
-	res.send("Hello!");
+	res.type('text/html');
+	res.send(uiHTML);
 });
 
 app.use(function(req, res, next) {
 	res.send(404, "Couldn't find the page you were looking for.");
-});*/
+});

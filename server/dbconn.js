@@ -38,6 +38,7 @@ function MongoDBConn(mongoDriver,serverUrl,dbName,port) {
 }
 
 MongoDBConn.prototype = new DBConn();
+MongoDBConn.prototype.constructor = MongoDBConn;
 MongoDBConn.prototype.connect = function(callback) {
 	var mongoClient = this.mongoDriver.getMongoClient();
 	var dbConnObj = this;
@@ -67,10 +68,14 @@ var MongoDriver = (function() {
 	
 	function initialize() {
 		var mongo = require("mongodb");
+		var mongoose = require("mongoose");
 		
 		return {
 			getMongoClient: function() {
 				return mongo.MongoClient;
+			},
+			getSchema: function() {
+				return mongoose.Schema;
 			}
 		};
 	}
@@ -84,3 +89,4 @@ var MongoDriver = (function() {
 		}
 	};
 })();
+module.exports.MongoDriver = MongoDriver;
