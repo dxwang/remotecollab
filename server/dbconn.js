@@ -74,6 +74,9 @@ var MongoDriver = (function() {
 			getMongoClient: function() {
 				return mongo.MongoClient;
 			},
+			getBSONPure: function() {
+				return mongo.BSONPure;
+			},
 			getSchema: function() {
 				return mongoose.Schema;
 			}

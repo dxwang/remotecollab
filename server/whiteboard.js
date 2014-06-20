@@ -14,8 +14,39 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 	
+/* 
+ * Route new connections to appropriate whiteboard handler 
+ */
+function NewConnectionHandler(sockets) {
+	this.sockets = sockets;
+	this.whiteboardHandlers; // map[whiteboardId:String] -> handler:WhiteBoardHandler
+}
+NewConnectionHandler.prototype.handleNewConnection = function(socket) {
+	
+}
+NewConnectionHandler.prototype.start = function() {
+	this.sockets.on('connection', this.handleNewConnection);
+}
+
+module.exports.NewConnectionHandler = NewConnectionHandler;
+
+/*
+ * Handler for messages from the client connected to a whiteboard
+ */
+ function WhiteboardHandler(whiteboardID) {
+	this.whiteboardID = whiteboardID;
+ }
+ WhiteboardHandler.prototype.setWhiteboardID = function(whiteboardID) {
+	this.whiteboardID = whiteboardID;
+ }
+ WhiteboardHandler.prototype.getWhiteboardID = function() {
+	return this.whiteboardID;
+ }
+ 
+/* 
+	
 // Connect to the db
-var mongo = require('mongodb');
+/*var mongo = require('mongodb');
 var mongoClient = mongo.MongoClient;
 var bson = mongo.BSONPure;
 var mongoPort = 27017;
@@ -73,4 +104,4 @@ var createWhiteboard = function() {
 }
 
 module.exports.exists = exists;
-module.exports.createWhiteboard = createWhiteboard;
+module.exports.createWhiteboard = createWhiteboard;*/

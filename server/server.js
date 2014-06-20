@@ -21,9 +21,9 @@ var express = require('express');
 var app = express();
 var server;
 var io = require('socket.io');
-var sockets;
 var uiHTMLPath = '/../www/index.html';
 var uiHTML;
+var connectionHandler;
 
 // Server initialization
 function bootstrap() {
@@ -57,7 +57,9 @@ function startServer() {
 	});
 }
 function startSocketIO() {
-	sockets = io.listen(server).sockets;
+	var sockets = io.listen(server).sockets;
+	connectionHandler = new whiteboard.NewConnectionHandler(sockets);
+	connectionHandler.start();
 }
 
 bootstrap();
