@@ -17,15 +17,30 @@
 /* 
  * Route new connections to appropriate whiteboard handler 
  */
-function NewConnectionHandler(sockets) {
+function NewConnectionHandler(sockets,dbConn) {
 	this.sockets = sockets;
-	this.whiteboardHandlers; // map[whiteboardId:String] -> handler:WhiteBoardHandler
+	this.db = dbConn._db;
+	this.whiteboardHandlers = {}; // map[whiteboardId:String] -> handler:WhiteBoardHandler
 }
-NewConnectionHandler.prototype.handleNewConnection = function(socket) {
-	
+NewConnectionHandler.prototype.constructor = NewConnectionHandler;
+NewConnectionHandler.prototype.handleNewUserMessage = function(connHandler,socket) {
+	return function(data) {
+		var whiteboardId = data.whiteboardId;
+		if(whiteboardId) {
+			if(!connHandler.whiteboardHandlers[whiteboardId]) {
+				connHandler.whiteboardHandlers[whiteboardId] = new WhiteboardHandler(whiteboardId,connHandler.db);
+			}
+			connHandler.whiteboardHandlers[whiteboardId].addNewUser(socket);
+		}
+	};
+}
+NewConnectionHandler.prototype.handleNewConnection = function(connHandler) {
+	return function(socket) {
+		socket.on('new user', connHandler.handleNewUserMessage(connHandler,socket));
+	};
 }
 NewConnectionHandler.prototype.start = function() {
-	this.sockets.on('connection', this.handleNewConnection);
+	this.sockets.on('connection', this.handleNewConnection(this));
 }
 
 module.exports.NewConnectionHandler = NewConnectionHandler;
@@ -33,14 +48,47 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 /*
  * Handler for messages from the client connected to a whiteboard
  */
- function WhiteboardHandler(whiteboardID) {
-	this.whiteboardID = whiteboardID;
+ function WhiteboardHandler(whiteboardId,db) {
+	this.whiteboardId = whiteboardId;
+	this.db = db;
+	this.users = {}; // current users
  }
- WhiteboardHandler.prototype.setWhiteboardID = function(whiteboardID) {
-	this.whiteboardID = whiteboardID;
+ WhiteboardHandler.prototype.setWhiteboardId = function(whiteboardID) {
+	this.whiteboardId = whiteboardId;
  }
- WhiteboardHandler.prototype.getWhiteboardID = function() {
-	return this.whiteboardID;
+ WhiteboardHandler.prototype.getWhiteboardId = function() {
+	return this.whiteboardId;
+ }
+ WhiteboardHandler.prototype.getUniqueUserId = function() {
+	var userId = "Guest";
+	var digits = ['0','1','2','3','4','5','6','7','8','9'];
+	do {
+		// Tack on 4 random digits
+		for(var i=0; i < 4; i++) {
+			userId += digits[Math.floor(Math.random() * 10)];
+		}
+	} while(this.users[userId]);
+	return userId;
+ }
+ WhiteboardHandler.prototype.addNewUser = function(socket) {
+	var userId = this.getUniqueUserId();
+ 
+	socket.join(this.whiteboardId);
+	this.users[userId] = true;
+	socket.userId = userId;
+	socket.whiteboardHandler = this;
+	
+	socket.emit('you joined', { "whiteboardId" : this.whiteboardId });
+	socket.emit('your user id', { "userId" : userId });
+	socket.on('disconnect', this.handleDisconnect(socket));
+	
+	console.log("User " + userId + " joined whiteboard " + this.whiteboardId);
+ }
+ WhiteboardHandler.prototype.handleDisconnect = function(socket) {
+	return function(){
+		delete socket.whiteboardHandler.users[socket.userId];
+		console.log("User " + socket.userId + " disconnected from whiteboard " + socket.whiteboardHandler.whiteboardId);
+	};
  }
  
 /* 

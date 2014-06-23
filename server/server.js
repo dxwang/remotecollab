@@ -44,21 +44,21 @@ function connectToDB() {
 }
 function onConnectedToDB(conn) {
 	if(conn._db) {
-		startServer();
+		startServer(conn);
 	} else {
 		console.log("Unable to connect to database -- Server not started.");
 	}
 }
-function startServer() {
+function startServer(conn) {
 	server = app.listen(3000, function() {
 		console.log('Listening on port %d', server.address().port);
 		// Start socket.io
-		startSocketIO();
+		startSocketIO(conn);
 	});
 }
-function startSocketIO() {
+function startSocketIO(conn) {
 	var sockets = io.listen(server).sockets;
-	connectionHandler = new whiteboard.NewConnectionHandler(sockets);
+	connectionHandler = new whiteboard.NewConnectionHandler(sockets,conn);
 	connectionHandler.start();
 }
 

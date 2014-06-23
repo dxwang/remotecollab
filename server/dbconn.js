@@ -40,18 +40,15 @@ function MongoDBConn(mongoDriver,serverUrl,dbName,port) {
 MongoDBConn.prototype = new DBConn();
 MongoDBConn.prototype.constructor = MongoDBConn;
 MongoDBConn.prototype.connect = function(callback) {
-	var mongoClient = this.mongoDriver.getMongoClient();
-	var dbConnObj = this;
-	mongoClient.connect(this.serverUrl + ":" + this.port + "/" + this.dbName, function(err, db) {
-		if(!err) {
-			console.log("Connected to database: " + dbConnObj.dbName);
-			dbConnObj._db = db;
-		} else {
-			console.log("Error occurred trying to connect to MongoDB");
-		}
-	  
-		callback(dbConnObj);
-	});
+	this.mongoDriver.getMongoose().connect(this.serverUrl + ":" + this.port + "/" + this.dbName);
+	this.mongoDriver.getMongoose().connection.once('open', this.onConnected(this,callback));
+}
+MongoDBConn.prototype.onConnected = function(dbconn,callback) {
+	return function() {
+		console.log("Connected to database " + dbconn.dbName);
+		dbconn._db = dbconn.mongoDriver.getMongoose().connection;
+		callback(dbconn);
+	};
 }
 MongoDBConn.prototype.getDBHandle = function() {
 	return this._db;
@@ -67,18 +64,18 @@ var MongoDriver = (function() {
 	var instance;
 	
 	function initialize() {
-		var mongo = require("mongodb");
+		// var mongo = require("mongodb");
 		var mongoose = require("mongoose");
 		
 		return {
-			getMongoClient: function() {
+			/*getMongoClient: function() {
 				return mongo.MongoClient;
+			},*/
+			getMongoose: function() {
+				return mongoose;
 			},
 			getBSONPure: function() {
 				return mongo.BSONPure;
-			},
-			getSchema: function() {
-				return mongoose.Schema;
 			}
 		};
 	}
