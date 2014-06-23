@@ -2,6 +2,7 @@
 
 window.whiteboardModel = {
 	currentLine: [],
+	currentLineId: null,
 	lines: null,
 	whiteboardId: null,
 
@@ -9,41 +10,54 @@ window.whiteboardModel = {
 	Mock API Calls
 	*/
 	mockGetLines: function(){
-		return {};
+		lines = {};
+		for (var id in lines){
+			whiteboardModel.updateLine(id, lines[id]);
+		}
 	},
 
-	mockAddLine: function(line){
-		this.lines[Date.now()] = line;
+	mockGetNewLineId: function(){
+		this.currentLineId = Date.now();
+	},
+
+	mockGetNewWhiteboardId: function(){
+		this.whiteboardId = Date.now();
+	},
+
+	mockAddLine: function(id, line){
+
 	},
 	/*
 	End of API Calls
 	*/
 
 	init: function(){
-		// API call to get lines and whiteboardId
-		this.lines = whiteboardModel.mockGetLines();
-
-
-		for (var key in this.lines){
-			whiteboardView.draw(lines[key]);
+		// API call to get lines and possibly whiteboardId
+		if (this.whiteboardId === null){
+			whiteboardModel.mockGetNewWhiteboardId();
 		}
+		whiteboardModel.mockGetLines();
 	},
 
-	updateLines: function(id, line){
+	updateLine: function(id, line){
 		lines[id] = line;
 		whiteboardView.draw(line);
 	},
 
 	addPointToCurrentLine: function(coordinates){
+		if (this.currentLineId === null){
+			// API Call to get an Id for the current line
+			whiteboardModel.mockGetNewLineId();
+		}
 		this.currentLine.push(coordinates);
-		whiteboardView.draw(this.currentLine);
+		whiteboardModel.updateLine(this.currentLineId, this.currentLine);
+		// API call to submit line, with line id
+		whiteboardModel.mockAddLine(this.currentLineId, this.currentLine);
 	},
 
 	endCurrentLine: function(){
-		// API call to submit line, get line id, and add line to lines dict
-		whiteboardModel.mockAddLine(this.currentLine);
-
-		currentLine = [];
+		this.currentLine = [];
+		this.currentLineId = null;
 	}
 };
 

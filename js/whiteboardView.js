@@ -6,9 +6,11 @@ window.whiteboardView = {
 	context: null,
 
 	init: function(canvas){
-		console.log(canvas);
 		this.canvas = canvas;
-		this.canvasObj = $(canvas);
+		this.canvas.width = this.canvas.offsetWidth;
+	    this.canvas.height = this.canvas.offsetHeight;
+	    this.canvasObj = $(canvas);
+
 		this.context = canvas.getContext('2d');
 
 		this.context.lineWidth = 1;
@@ -20,7 +22,6 @@ window.whiteboardView = {
 	},
 
 	draw: function(line){
-		console.log(line)
 		if (line !== null){
 			this.context.beginPath();
 			this.context.stroke();

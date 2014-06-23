@@ -26,7 +26,7 @@ window.whiteboardController = {
 	 * canvas element.
 	 */
 	getX: function(event) {
-		var cssx = (event.clientX - whiteboardView.canvasObj.offset().left);
+		var cssx = (event.pageX - whiteboardView.canvasObj.offset().left);
 	    var xrel = whiteboardController.getRelative().width;
 	    var canvasx = cssx * xrel;
 	    return canvasx;
@@ -41,7 +41,7 @@ window.whiteboardController = {
 	 * canvas element.
 	 */
 	getY: function(event) {
-	    var cssy = (event.clientY - whiteboardView.canvasObj.offset().top);
+	    var cssy = (event.pageY - whiteboardView.canvasObj.offset().top);
 	    var yrel = whiteboardController.getRelative().height;
 	    var canvasy = cssy * yrel;
 	    return canvasy;
