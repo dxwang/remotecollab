@@ -5,6 +5,7 @@
   <body>
     <script>
       var socket = io.connect();
+	  socket.emit('new user', { whiteboardId: 3});
     </script>
     <div>This is our socket.html file</div>
   </body>

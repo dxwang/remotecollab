@@ -58,7 +58,8 @@ function startServer(conn) {
 }
 function startSocketIO(conn) {
 	var sockets = io.listen(server).sockets;
-	connectionHandler = new whiteboard.NewConnectionHandler(sockets,conn);
+	whiteboard.initializeModels(conn);
+	connectionHandler = new whiteboard.NewConnectionHandler(sockets);
 	connectionHandler.start();
 }
 

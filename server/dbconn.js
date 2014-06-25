@@ -64,13 +64,13 @@ var MongoDriver = (function() {
 	var instance;
 	
 	function initialize() {
-		// var mongo = require("mongodb");
+		var mongo = require("mongodb");
 		var mongoose = require("mongoose");
 		
 		return {
-			/*getMongoClient: function() {
+			getMongoClient: function() {
 				return mongo.MongoClient;
-			},*/
+			},
 			getMongoose: function() {
 				return mongoose;
 			},

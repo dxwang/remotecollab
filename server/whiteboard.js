@@ -13,26 +13,88 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
+var db;
+var ObjectId;
+var PointModel;
+var LineModel;
+var BoardModel;
+var Counter;
+	
+function initializeModels(dbConn) {
+	var mongoose = dbConn.mongoDriver.getMongoose();
+	ObjectId = mongoose.Types.ObjectId;
+	db = dbConn._db;
+
+	var Schema = mongoose.Schema;
+	var PointSchema = new Schema({x: Number, y: Number});
+	var LineSchema = new Schema({id: Number, colour: String, line: [PointSchema]});
+	var BoardSchema = new Schema({id: Number, data: [LineSchema], lineCount: Number});
+	var CounterSchema = new Schema({id: String, count: Number});
+	
+	PointModel = mongoose.model('Point', PointSchema);
+	LineModel = mongoose.model('Line', LineSchema);
+	BoardModel = mongoose.model('Board', BoardSchema);
+	Counter = mongoose.model('Counter', CounterSchema);
+	
+	// Atomic count for board id's
+	Counter.count({id: "boards"}, function(err, count) {
+		if(!err && count == 0) {
+			var newCounter = new Counter({id: "boards", count: 0}); 
+			newCounter.save(function(err) {
+				if(!err) {
+					console.log("Created board counter");
+				}
+			});
+		}
+	});
+}
+module.exports.initializeModels = initializeModels;
 	
 /* 
  * Route new connections to appropriate whiteboard handler 
  */
-function NewConnectionHandler(sockets,dbConn) {
+function NewConnectionHandler(sockets) {
 	this.sockets = sockets;
-	this.db = dbConn._db;
 	this.whiteboardHandlers = {}; // map[whiteboardId:String] -> handler:WhiteBoardHandler
 }
 NewConnectionHandler.prototype.constructor = NewConnectionHandler;
 NewConnectionHandler.prototype.handleNewUserMessage = function(connHandler,socket) {
 	return function(data) {
-		var whiteboardId = data.whiteboardId;
-		if(whiteboardId) {
-			if(!connHandler.whiteboardHandlers[whiteboardId]) {
-				connHandler.whiteboardHandlers[whiteboardId] = new WhiteboardHandler(whiteboardId,connHandler.db);
-			}
-			connHandler.whiteboardHandlers[whiteboardId].addNewUser(socket);
+		var whiteboardId = parseInt(data.whiteboardId);
+		if(!isNaN(whiteboardId)) {
+			WhiteBoards.get(whiteboardId, function(whiteboard) {
+				if(whiteboard) {
+					connHandler.handleNewUser(whiteboard, socket);
+				} else {
+					// No such whiteboard exists, create new one
+					WhiteBoards.create(function(whiteboard) {
+						if(whiteboard) {
+							connHandler.handleNewUser(whiteboard, socket);
+						} else {
+							socket.emit('remotecollab error', {error: "Could not create new whiteboard"});
+						}
+					});
+				}
+			});
+		} else {
+			// Gave an invalid whiteboard id, create a new one
+			WhiteBoards.create(function(whiteboard) {
+				if(whiteboard) {
+					connHandler.handleNewUser(whiteboard, socket);
+				} else {
+					socket.emit('remotecollab error', {error: "Could not create new whiteboard"});
+				}
+			});
 		}
 	};
+}
+NewConnectionHandler.prototype.handleNewUser = function(whiteboard, socket) {
+	if(whiteboard) {
+		if(!this.whiteboardHandlers[whiteboard.id]) {
+			this.whiteboardHandlers[whiteboard.id] = new WhiteboardHandler(whiteboard);
+		}
+		this.whiteboardHandlers[whiteboard.id].addNewUser(socket);
+	}
 }
 NewConnectionHandler.prototype.handleNewConnection = function(connHandler) {
 	return function(socket) {
@@ -48,16 +110,9 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 /*
  * Handler for messages from the client connected to a whiteboard
  */
- function WhiteboardHandler(whiteboardId,db) {
-	this.whiteboardId = whiteboardId;
-	this.db = db;
+ function WhiteboardHandler(whiteboard) {
+	this.whiteboard = whiteboard;
 	this.users = {}; // current users
- }
- WhiteboardHandler.prototype.setWhiteboardId = function(whiteboardID) {
-	this.whiteboardId = whiteboardId;
- }
- WhiteboardHandler.prototype.getWhiteboardId = function() {
-	return this.whiteboardId;
  }
  WhiteboardHandler.prototype.getUniqueUserId = function() {
 	var userId = "Guest";
@@ -73,22 +128,69 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
  WhiteboardHandler.prototype.addNewUser = function(socket) {
 	var userId = this.getUniqueUserId();
  
-	socket.join(this.whiteboardId);
+	socket.join(this.whiteboard.id);
 	this.users[userId] = true;
 	socket.userId = userId;
 	socket.whiteboardHandler = this;
 	
-	socket.emit('you joined', { "whiteboardId" : this.whiteboardId });
+	socket.emit('you joined', { "whiteboardId" : this.whiteboard.id });
 	socket.emit('your user id', { "userId" : userId });
 	socket.on('disconnect', this.handleDisconnect(socket));
 	
-	console.log("User " + userId + " joined whiteboard " + this.whiteboardId);
+	console.log("User " + userId + " joined whiteboard " + this.whiteboard.id);
  }
  WhiteboardHandler.prototype.handleDisconnect = function(socket) {
 	return function(){
 		delete socket.whiteboardHandler.users[socket.userId];
-		console.log("User " + socket.userId + " disconnected from whiteboard " + socket.whiteboardHandler.whiteboardId);
+		console.log("User " + socket.userId + " disconnected from whiteboard " + socket.whiteboardHandler.whiteboard.id);
 	};
+ }
+ 
+ var WhiteBoards = {
+	nextBoardId: function(callback) {
+		Counter.findOneAndUpdate({id: "boards"}, {$inc: {count: 1}}, function(err, counter) {
+			if(!err && counter) {
+				callback(counter.count);
+			} else {
+				callback();
+			}
+		});
+	},
+	get: function(id, callback) {
+		BoardModel.findOne({"id": id}, function(err, board) {
+			if(!err && board) {
+				callback(board);
+			} else {
+				console.log("Couldn't find board with id " + id);
+				callback();
+			}
+		});
+	},
+	create: function(callback) {
+		WhiteBoards.nextBoardId(function(whiteboardId) {
+			if(whiteboardId) {
+				var whiteboard = new BoardModel({id: whiteboardId, data: [], lineCount: 0});
+				whiteboard.save(function(err, wb) {
+					if(!err && wb) {
+						console.log("Created new whiteboard (id " + whiteboardId + ")");
+						callback(wb);
+					} else {
+						console.log("Could not create new whiteboard");
+						console.log(err);
+						callback();
+					}
+				});
+			} else {
+				console.log("Could not generate new whiteboard id");
+			}
+		});
+	},
+	addLine: function(whiteboard,callback) {
+	
+	},
+	eraseLine: function(whiteboard,callback) {
+	 
+	}
  }
  
 /* 
