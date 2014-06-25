@@ -28,7 +28,7 @@ function initializeModels(dbConn) {
 	var Schema = mongoose.Schema;
 	var PointSchema = new Schema({x: Number, y: Number});
 	var LineSchema = new Schema({id: Number, colour: String, line: [PointSchema]});
-	var BoardSchema = new Schema({id: Number, data: [LineSchema], lineCount: Number});
+	var BoardSchema = new Schema({id: Number, data: [LineSchema]});
 	var CounterSchema = new Schema({id: String, count: Number});
 	
 	PointModel = mongoose.model('Point', PointSchema);
@@ -138,6 +138,11 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 	socket.on('disconnect', this.handleDisconnect(socket));
 	
 	console.log("User " + userId + " joined whiteboard " + this.whiteboard.id);
+	
+	// Send all stored whiteboard data to the user if necessary
+	if(whiteboard.data.length > 0) {
+		socket.emit('sync', whiteboard.data);
+	}
  }
  WhiteboardHandler.prototype.handleDisconnect = function(socket) {
 	return function(){
@@ -185,10 +190,10 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 			}
 		});
 	},
-	addLine: function(whiteboard,callback) {
+	addLine: function(whiteboard,line,callback) {
 	
 	},
-	eraseLine: function(whiteboard,callback) {
+	eraseLine: function(whiteboard,id,callback) {
 	 
 	}
  }
