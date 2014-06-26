@@ -27,7 +27,7 @@ function initializeModels(dbConn) {
 
 	var Schema = mongoose.Schema;
 	var PointSchema = new Schema({x: Number, y: Number});
-	var LineSchema = new Schema({id: Number, colour: String, line: [PointSchema]});
+	var LineSchema = new Schema({id: Number, color: String, data: [PointSchema]});
 	var BoardSchema = new Schema({id: Number, data: [LineSchema]});
 	var CounterSchema = new Schema({id: String, count: Number});
 	
@@ -133,16 +133,30 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 	socket.userId = userId;
 	socket.whiteboardHandler = this;
 	
-	socket.emit('you joined', { "whiteboardId" : this.whiteboard.id });
-	socket.emit('your user id', { "userId" : userId });
-	socket.on('disconnect', this.handleDisconnect(socket));
-	
+	socket.emit('you joined', { "whiteboardId" : this.whiteboard.id, "yourUserId" : userId });
 	console.log("User " + userId + " joined whiteboard " + this.whiteboard.id);
-	
 	// Send all stored whiteboard data to the user if necessary
-	if(whiteboard.data.length > 0) {
-		socket.emit('sync', whiteboard.data);
+	if(this.whiteboard.data.length > 0) {
+		socket.emit('sync', this.whiteboard.data);
 	}
+
+	socket.on('draw', this.handleDrawMessage(this, socket));
+	socket.on('disconnect', this.handleDisconnect(socket));
+ }
+ WhiteboardHandler.prototype.handleDrawMessage = function(connHandler, socket) {
+	return function(data) {
+		var lineData = data.line;
+		WhiteBoards.addLine(connHandler.whiteboard, lineData, function(err, whiteboard, line) {
+			connHandler.whiteboard = whiteboard;
+			if(!err) {
+				socket.emit('line added', { lineId: line.id });
+				socket.to(connHandler.whiteboard.id).emit('draw', {'line': line});
+			} else {
+				console.log("Error adding line to whiteboard " + connHandler.whiteboard.id);
+				socket.emit('remotecollab error', { error: "Error adding line to whiteboard" });
+			}
+		});
+	};
  }
  WhiteboardHandler.prototype.handleDisconnect = function(socket) {
 	return function(){
@@ -191,7 +205,12 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 		});
 	},
 	addLine: function(whiteboard,line,callback) {
-	
+		var lineModel = new LineModel(line);
+		lineModel.id = whiteboard.data.length;
+		whiteboard.data.push(lineModel);
+		whiteboard.save(function(err, wb) {
+			callback(err, wb, lineModel);
+		});
 	},
 	eraseLine: function(whiteboard,id,callback) {
 	 
