@@ -1,0 +1,38 @@
+#chat {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	font: 13px georgia, serif;
+	width: 20%;
+	background: yellow;
+	outline: 2px solid black;
+}
+
+#messages {
+	height: 80%;
+	list-style-type: none;
+	overflow: auto;
+	word-wrap: break-word;
+	padding: 5px;
+}
+
+li {
+	border-spacing: 10px;
+}
+
+#chat_message {
+	width: 60%;
+}
+
+form {
+	border: 0;
+	padding: 10px;
+	width: 20%;
+	margin-right: 0.5%;
+	display: inline;
+}
+
+form button { 
+	background: orange;
+	padding: 10px;
+}
