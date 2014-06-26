@@ -137,10 +137,11 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 	console.log("User " + userId + " joined whiteboard " + this.whiteboard.id);
 	// Send all stored whiteboard data to the user if necessary
 	if(this.whiteboard.data.length > 0) {
-		socket.emit('sync', this.whiteboard.data);
+		socket.emit('sync', {'data' : this.whiteboard.data});
 	}
 
 	socket.on('draw', this.handleDrawMessage(this, socket));
+	socket.on('erase', this.handleEraseMessage(this, socket));
 	socket.on('disconnect', this.handleDisconnect(socket));
  }
  WhiteboardHandler.prototype.handleDrawMessage = function(connHandler, socket) {
@@ -149,11 +150,24 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 		WhiteBoards.addLine(connHandler.whiteboard, lineData, function(err, whiteboard, line) {
 			connHandler.whiteboard = whiteboard;
 			if(!err) {
-				socket.emit('line added', { lineId: line.id });
+				socket.emit('line added', { id: line.id });
 				socket.to(connHandler.whiteboard.id).emit('draw', {'line': line});
 			} else {
 				console.log("Error adding line to whiteboard " + connHandler.whiteboard.id);
 				socket.emit('remotecollab error', { error: "Error adding line to whiteboard" });
+			}
+		});
+	};
+ }
+ WhiteboardHandler.prototype.handleEraseMessage = function(connHandler, socket) {
+	return function(data) {
+		WhiteBoards.eraseLine(connHandler.whiteboard, data.id, function(success) {
+			if(success) {
+				socket.emit('erase', { 'id' : data.id });
+				socket.to(connHandler.whiteboard.id).emit('erase', { 'id' : data.id });
+			} else {
+				console.log("Error erasing line (" + data.id + ") from whiteboard " + connHandler.whiteboard.id);
+				socket.emit('remotecollab error', { error: "Error erasing line from whiteboard" });
 			}
 		});
 	};
@@ -213,7 +227,13 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 		});
 	},
 	eraseLine: function(whiteboard,id,callback) {
-	 
+		whiteboard.data.findOneAndRemove({'id' : id }, function(err, removedLine) {
+			if(!err && removedLine && removedLine.id == id) {
+				callback(true);
+			} else {
+				callback(false);
+			}
+		});
 	}
  }
  
