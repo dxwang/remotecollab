@@ -1,0 +1,33 @@
+<html>
+  <head>
+    <script src="/socket.io/socket.io.js"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  </head>
+  <body>
+    <div>This is our socket.html file</div>
+	<form>
+		<input id="foo" type="button" value="Click Me!" />
+	</form>
+	
+	<script>
+      var socket = io.connect();
+	  socket.emit('new user', { whiteboardId: 3});
+	  socket.on('you joined', function(data) {
+		alert("User ID: " + data.yourUserId + " Whiteboard: " + data.whiteboardId);
+	  });
+	  socket.on('sync', function(data) {
+		alert("Current whiteboard data: " + data.data);
+	  });
+	  socket.on('draw', function(data) {
+		alert("Someone else drew line " + data.line.id);
+	  });
+	  socket.on('line added', function(data) {
+		alert("Line added: " + data.id);
+	  });
+	  
+	  $("#foo").click(function() {
+		socket.emit('draw', {line: { color: "black", data: [{x:4, y:5}, {x:7, y:10}]  }});
+	  });
+    </script>
+  </body>
+</html>
