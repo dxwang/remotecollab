@@ -200,7 +200,8 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 		});
 	},
 	create: function(callback) {
-		WhiteBoards.nextBoardId(function(whiteboardId) {
+		Whi
+		teBoards.nextBoardId(function(whiteboardId) {
 			if(whiteboardId) {
 				var whiteboard = new BoardModel({id: whiteboardId, data: [], lineCount: 0});
 				whiteboard.save(function(err, wb) {

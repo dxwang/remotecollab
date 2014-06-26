@@ -21,7 +21,7 @@ var express = require('express');
 var app = express();
 var server;
 var io = require('socket.io');
-var uiHTMLPath = '/../www/index.html';
+var uiHTMLPath = '/../index.html';
 var uiHTML;
 var connectionHandler;
 
@@ -70,9 +70,28 @@ app.param('whiteboardId', function(req, res, next, whiteboardId) {
 	next();
 });
 
+app.param('fileId', function(req, res, next, fileId) {
+	req.fileId = fileId;
+	next();
+});
+
 app.get('/whiteboard/:whiteboardId', function(req, res, next) {
 	res.type('text/html');
 	res.send(uiHTML);
+});
+
+app.get('/js/:fileId', function(req, res, next) {
+	res.type('text/javascript');
+	fs.readFile(__dirname + '/../js' + req.fileId, function(err, data) {
+		res.send(data);
+	});
+});
+
+app.get('/style/:fileId', function(req, res, next) {
+	res.type('text/css');
+	fs.readFile(__dirname + '/../style' + req.fileId, function(err, data) {
+		res.send(data);
+	});
 });
 
 app.use(function(req, res, next) {
