@@ -1,6 +1,6 @@
+<!--
 <html>
 <head>
-	<!-- <script src="/socket.io/socket.io.js"></script> -->
 	<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
 	<script src="chat.js"></script>
 	<link rel="stylesheet" type="text/css" href="chat.css" />
@@ -21,5 +21,28 @@
 		</div>
 
 	</body>
+</html>
+-->
 
+<!DOCTYPE html>
+<head>
+    <title>HTML 5 Whiteboard</title>
+    <link rel="stylesheet" type="text/css" href="/style/whiteboard.css"/>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+	<script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+    <script src="/js/whiteboardModel.js"></script>
+	<script src="/js/whiteboardController.js"></script>
+	<script src="/js/whiteboardView.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function(){
+			whiteboardView.init(document.querySelector('#canvas'));
+		});
+	</script>
+</head>
+<body>
+	<div id="canvas-view">
+		<canvas id="canvas"></canvas>
+	</div>
+</body>
 </html>
