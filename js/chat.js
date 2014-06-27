@@ -1,4 +1,4 @@
-// var socket = io();
+var socket = io.connect('localhost:3000');
 
 $(document).ready(function () {
 
@@ -10,19 +10,23 @@ $(document).ready(function () {
 	});
 
 
-	// socket.on('chat', receiveChatMessage)
+	socket.on('chat', receiveChatMessage)
 
 	function sendChatMessage() {
 		msg = $('#chat_message').val();
+		printChatMessage("You: " + msg);
 
-		receiveChatMessage(msg);
-		// socket.emit('chat', {'message': msg});
+		socket.emit('chat', {'message': msg});
 	}
 
-	function receiveChatMessage(msg) {
+	function printChatMessage(msg) {
 		msg = $('<li>').text(msg);
 	
 		$('#messages').append(msg);
+	}
+
+	function receiveChatMessage(msg) {
+		printChatMessage(msg.message);
 	}
 
 });
