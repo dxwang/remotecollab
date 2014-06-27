@@ -1,4 +1,4 @@
-(function(){
+$(document).ready(function(){
 
 window.whiteboardView = {
 	canvas: null,
@@ -6,6 +6,7 @@ window.whiteboardView = {
 	context: null,
 
 	init: function(canvas){
+
 		this.canvas = canvas;
 		this.canvas.width = this.canvas.offsetWidth;
 	    this.canvas.height = this.canvas.offsetHeight;
@@ -18,16 +19,15 @@ window.whiteboardView = {
 
 		whiteboardModel.init();
 		whiteboardController.init(canvas);
-
 	},
 
 	draw: function(line){
-		if (line !== null){
+		if (line !== null && line.length > 0){
 			this.context.beginPath();
 			this.context.stroke();
-			this.context.moveTo(line[0][0], line[0][1]);
+			this.context.moveTo(line[0].x, line[0].y);
 			for (var i=1;i<line.length;i++){
-				this.context.lineTo(line[i][0], line[i][1]);
+				this.context.lineTo(line[i].x, line[i].y);
 				this.context.stroke();
 			}
 			this.context.closePath();
@@ -35,4 +35,4 @@ window.whiteboardView = {
 	}
 }
 
-})();
+});

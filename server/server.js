@@ -82,14 +82,14 @@ app.get('/whiteboard/:whiteboardId', function(req, res, next) {
 
 app.get('/js/:fileId', function(req, res, next) {
 	res.type('text/javascript');
-	fs.readFile(__dirname + '/../js' + req.fileId, function(err, data) {
+	fs.readFile(__dirname + '/../js/' + req.fileId, function(err, data) {
 		res.send(data);
 	});
 });
 
 app.get('/style/:fileId', function(req, res, next) {
 	res.type('text/css');
-	fs.readFile(__dirname + '/../style' + req.fileId, function(err, data) {
+	fs.readFile(__dirname + '/../style/' + req.fileId, function(err, data) {
 		res.send(data);
 	});
 });
