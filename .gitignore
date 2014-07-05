@@ -2,3 +2,5 @@
 /node_modules
 # MongoDB directory
 /data
+#config file
+/js/config.js
