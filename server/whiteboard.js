@@ -137,23 +137,27 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 	console.log("User " + userId + " joined whiteboard " + this.whiteboard.id);
 	// Send all stored whiteboard data to the user if necessary
 	if(this.whiteboard.data.length > 0) {
-		socket.emit('sync', {'data' : this.whiteboard.data});
+		socket.emit('sync', this.whiteboard.data);
 	}
 
 	socket.on('draw', this.handleDrawMessage(this, socket));
 	socket.on('erase', this.handleEraseMessage(this, socket));
 	socket.on('disconnect', this.handleDisconnect(socket));
+	socket.on('chat', function(data) {
+		data.message = socket.userId + ": " + data.message;
+		console.log(data);
+		socket.broadcast.emit('chat', data)
+	});
  }
  WhiteboardHandler.prototype.handleDrawMessage = function(connHandler, socket) {
 	return function(data) {
 		var lineData = data.line;
 		WhiteBoards.addLine(connHandler.whiteboard, lineData, function(err, whiteboard, line) {
-			connHandler.whiteboard = whiteboard;
 			if(!err) {
+				// connHandler.whiteboard = whiteboard;
 				socket.emit('line added', { id: line.id });
 				socket.to(connHandler.whiteboard.id).emit('draw', {'line': line});
 			} else {
-				console.log("Error adding line to whiteboard " + connHandler.whiteboard.id);
 				socket.emit('remotecollab error', { error: "Error adding line to whiteboard" });
 			}
 		});
@@ -200,8 +204,7 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 		});
 	},
 	create: function(callback) {
-		Whi
-		teBoards.nextBoardId(function(whiteboardId) {
+		WhiteBoards.nextBoardId(function(whiteboardId) {
 			if(whiteboardId) {
 				var whiteboard = new BoardModel({id: whiteboardId, data: [], lineCount: 0});
 				whiteboard.save(function(err, wb) {
@@ -223,9 +226,11 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 		var lineModel = new LineModel(line);
 		lineModel.id = whiteboard.data.length;
 		whiteboard.data.push(lineModel);
-		whiteboard.save(function(err, wb) {
+		var err;
+		callback(err, whiteboard, lineModel);
+		/*whiteboard.save(function(err, wb) {
 			callback(err, wb, lineModel);
-		});
+		});*/
 	},
 	eraseLine: function(whiteboard,id,callback) {
 		whiteboard.data.findOneAndRemove({'id' : id }, function(err, removedLine) {

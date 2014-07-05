@@ -1,4 +1,4 @@
-(function(){
+$(document).ready(function(){
 
 window.whiteboardController = {
 	init: function(){
@@ -65,4 +65,4 @@ window.whiteboardController = {
 }
 
 
-})();
+});
