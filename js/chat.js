@@ -5,12 +5,15 @@ $(document).ready(function () {
 
 	$('#chat_form').submit(function (e) {
 		e.preventDefault();
+		// Send current message to server
 		sendChatMessage();
+		// Clear chat box message
 		$('#chat_message').val('');
 	});
 
-
+	// Create socket event for a chat message
 	socket.on('chat', receiveChatMessage)
+
 
 	function sendChatMessage() {
 		msg = $('#chat_message').val();
@@ -19,9 +22,10 @@ $(document).ready(function () {
 		socket.emit('chat', {'message': msg});
 	}
 
+	// Add last message to list of chat messages
 	function printChatMessage(msg) {
 		msg = $('<li>').text(msg);
-	
+
 		$('#messages').append(msg);
 	}
 
