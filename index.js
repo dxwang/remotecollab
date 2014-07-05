@@ -6,22 +6,6 @@ var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/test');
 var db = mongoose.connection;
 
-// MongoDB Schemas
-var Schema = mongoose.Schema;
-var pointSchema = new Schema({x:Number, y:Number});
-var lineSchema = new Schema({id: Number, colour: String, line:[pointSchema]});
-var boardSchema = new Schema({
-	_id: Number,
-	url: String,
-	data: [lineSchema] 
-
-});
-
-// Compile the schemas into models
-var Point = mongoose.model('Point', pointSchema);
-var Line = mongoose.model('Line', lineSchema);
-var Board = mongoose.model('Board', boardSchema);
-
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function callback() {
 	console.log("db open");
