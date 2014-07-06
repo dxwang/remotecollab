@@ -129,6 +129,7 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 	var userId = this.getUniqueUserId();
  
 	socket.join(this.whiteboard.id);
+	// If the only userid is 6403 is the users array of size 1 or 6403?
 	this.users[userId] = true;
 	socket.userId = userId;
 	socket.whiteboardHandler = this;
