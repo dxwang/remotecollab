@@ -12,7 +12,7 @@ window.whiteboardModel = {
 		// Logic to get whiteboard Id from URL
 		// TODO: Why is this always set to 1?
 		this.whiteboardId = 1;
-		this.socket = io.connect('ec2-54-84-82-90.compute-1.amazonaws.com:3000');
+		this.socket = io.connect('localhost:3000');
 		//this.socket = io.connect('localhost:3000');
 		this.socket.emit('new user', { whiteboardId: this.whiteboardId});
 		this.socketListeners();
