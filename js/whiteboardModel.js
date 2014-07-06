@@ -1,67 +1,57 @@
 $(document).ready(function(){
 
-window.whiteboardModel = {
-	currentLine: [],
-	currentLineId: null,
-	lines: {},
-	whiteboardId: null,
-	userId: null,
-	socket: null,
+/**
+ * Line Model
+ */
+window.lineModel = function(serverId, points){
+	this.id = serverId || Date.now();
+	this.points = points || [];
+}
 
-	init: function(){
-		// Logic to get whiteboard Id from URL
-		this.whiteboardId = 1;
-		this.socket = io.connect('localhost:3000');
-		this.socket.emit('new user', { whiteboardId: this.whiteboardId});
-		this.socketListeners();
-	},
+lineModel.prototype.getId = function(){
+	return this.id;
+}
 
-	socketListeners: function(){
-		var that = this;
+lineModel.prototype.getLine = function(){
+	return this.points;
+}
 
-		this.socket.on('you joined', function(data){
-			that.whiteboardId = data.whiteboardId;
-		});
+lineModel.prototype.addPoint = function(coord){
+	this.points.push(coord);
+	whiteboardView.draw(this.points);
+}
 
-		this.socket.on('sync', function(data){
-			for (var i=0;i<data.length;i++){
-				var line = data[i];
-				whiteboardModel.updateLine(line.id, line.data);
-			}
-		});
+/**
+ * User Model
+ */
+window.userModel = function(serverId, messages){
+	this.id = serverId;
+	this.messages = messages || {};
+}
 
-		this.socket.on('draw', function(data){
-			whiteboardModel.updateLine(data.line.id, data.line.data);
-		});
+userModel.prototype.getId = function(){
+	return this.id;
+}
 
-		this.socket.on('line added', function(data){
-			that.currentLineId = data.id;
-			whiteboardModel.updateLine(that.currentLineId, that.currentLine);
+userModel.prototype.addMessage = function(message){
+	this.messages[Date.now()] = message
+}
 
-		});
-	},
+/**
+ * Whiteboard Model
+ */
+window.whiteboardModel = function(serverId){
+	this.id = serverId;
+	this.lines = [];
+}
 
-	updateLine: function(id, line){
-		this.lines[id] = line;
-		whiteboardView.draw(line);
-	},
+whiteboardModel.prototype.getId = function(){
+	return this.id;
+}
 
-	addPointToCurrentLine: function(coordinates){
-		// if (this.currentLineId === null){
-		// 	// API Call to get an Id for the current line
-		// 	whiteboardModel.mockGetNewLineId();
-		// }
-		this.currentLine.push({x: coordinates[0], y: coordinates[1]});
-		this.socket.emit('draw', {line: {color: 'black', data: this.currentLine}});
-		// whiteboardModel.updateLine(this.currentLineId, this.currentLine);
-		// API call to submit line, with line id
-		// whiteboardModel.mockAddLine(this.currentLineId, this.currentLine);
-	},
-
-	endCurrentLine: function(){
-		this.currentLine = [];
-		this.currentLineId = null;
-	}
-};
+whiteboardModel.prototype.addLine = function(line){
+	this.lines.push(line);
+	whiteboardView.draw(line.points);
+}
 
 });
