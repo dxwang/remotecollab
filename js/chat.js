@@ -1,11 +1,4 @@
 var socket = io.connect('ec2-54-84-82-90.compute-1.amazonaws.com:3000');
-var config = config;
-
-if (this.config.ec2 == true) {
-	console.log ("IS EC2 INSTANCE");
-} else {
-	console.log ("IS NOT EC2");
-}
 
 $(document).ready(function () {
 

@@ -18,3 +18,9 @@ app.get('/', function(req, res){
 http.listen(3000, function(){
   console.log('listening on *:3000');
 });
+
+if (config.ec2 == true) {
+  console.log ("IS EC2 INSTANCE");
+} else {
+  console.log ("IS NOT EC2");
+}
