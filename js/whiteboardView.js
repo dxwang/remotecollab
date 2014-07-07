@@ -16,9 +16,6 @@ window.whiteboardView = {
 
 		this.context.lineWidth = 1;
 		this.context.lineCap = 'round';
-
-		whiteboardModel.init();
-		whiteboardController.init(canvas);
 	},
 
 	draw: function(line){
@@ -32,7 +29,28 @@ window.whiteboardView = {
 			}
 			this.context.closePath();
 		}
+	},
+
+	getRelativeWidth: function(){
+		return whiteboardView.canvas.width / whiteboardView.canvas.offsetWidth;
+	},
+
+	getRelativeHeight: function(){
+		return whiteboardView.canvas.height / whiteboardView.canvas.offsetHeight;
+	},
+
+	getX: function(pageX) {
+		var x = (pageX - whiteboardView.canvas.offsetLeft);
+    	var xrel = whiteboardView.getRelativeWidth();
+    	var xcanvas = x * xrel;
+    	return xcanvas;
+	},
+
+	getY: function(pageY) {
+    	var y = (pageY - whiteboardView.canvas.offsetTop);
+    	var yrel = whiteboardView.getRelativeHeight();
+    	var ycanvas = y * yrel;
+    	return ycanvas;
 	}
 }
-
 });

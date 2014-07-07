@@ -16,11 +16,12 @@
     <script src="/js/whiteboardModel.js"></script>
 	<script src="/js/whiteboardController.js"></script>
 	<script src="/js/whiteboardView.js"></script>
-
 	<script src="/js/chat.js"></script>
 	<script type="text/javascript">
 		$(document).ready(function(){
 			whiteboardView.init(document.querySelector('#canvas'));
+			var whiteboard = new whiteboardController();
+			whiteboard.init();
 		});
 	</script>
 </head>
@@ -28,6 +29,7 @@
 	<div id="canvas-view">
 		<canvas id="canvas"></canvas>
 	</div>
+<<<<<<< HEAD
 
 	<div id="chat">
 		<ul id="messages"></ul>
