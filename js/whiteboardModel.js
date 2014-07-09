@@ -2,10 +2,12 @@ $(document).ready(function(){
 
 /**
  * Line Model
+ * NEEDS A BUNCH OF CONTEXT METHODS
  */
-window.lineModel = function(serverId, points){
+window.lineModel = function(serverId, points, context){
 	this.id = serverId || Date.now();
 	this.points = points || [];
+	this.context = context || {color: "black", width: "1"};
 }
 
 lineModel.prototype.getId = function(){
@@ -18,14 +20,22 @@ lineModel.prototype.getLine = function(){
 
 lineModel.prototype.addPoint = function(coord){
 	this.points.push(coord);
-	whiteboardView.draw(this.points);
+}
+
+lineModel.prototype.getContext = function(){
+	return this.context;
+}
+
+lineModel.prototype.setContext = function(context){
+	this.context.color = context.color;
+	this.context.width = context.width;
 }
 
 /**
  * User Model
  */
 window.userModel = function(serverId, messages){
-	this.id = serverId;
+	this.id = serverId || Date.now();
 	this.messages = messages || {};
 }
 
@@ -40,18 +50,22 @@ userModel.prototype.addMessage = function(message){
 /**
  * Whiteboard Model
  */
-window.whiteboardModel = function(serverId){
-	this.id = serverId;
+window.whiteboardModel = function(drawFunc){
+	this.id = Date.now();
 	this.lines = [];
+	this.draw = drawFunc || function(){};
 }
 
 whiteboardModel.prototype.getId = function(){
 	return this.id;
 }
 
-whiteboardModel.prototype.addLine = function(line){
+whiteboardModel.prototype.addLine = function(data){
+	// var line = new lineModel(data.id, data.points, data.context);
+	var line = new lineModel(data.id, data.points);
 	this.lines.push(line);
-	whiteboardView.draw(line.points);
+	// this.draw(line.context, line.points)
+	this.draw(line.points);
 }
 
 });

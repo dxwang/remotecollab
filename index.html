@@ -12,9 +12,8 @@
 	<script src="chat.js"></script>
 	<script type="text/javascript">
 		$(document).ready(function(){
-			whiteboardView.init(document.querySelector('#canvas'));
 			var whiteboard = new whiteboardController();
-			whiteboard.init();
+			whiteboard.init(document.querySelector('#canvas'));
 		});
 	</script>
 </head>
