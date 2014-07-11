@@ -143,6 +143,11 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 	socket.on('draw', this.handleDrawMessage(this, socket));
 	socket.on('erase', this.handleEraseMessage(this, socket));
 	socket.on('disconnect', this.handleDisconnect(socket));
+	socket.on('chat', function(data) {
+		data.message = socket.userId + ": " + data.message;
+		console.log(data);
+		socket.broadcast.emit('chat', data)
+	});
  }
  WhiteboardHandler.prototype.handleDrawMessage = function(connHandler, socket) {
 	return function(data) {

@@ -3,17 +3,22 @@
 <head>
     <title>HTML 5 Whiteboard</title>
     <link rel="stylesheet" type="text/css" href="/style/whiteboard.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/chat.css"/>
     <script src="/socket.io/socket.io.js"></script>
     <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
 	<script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
     <script src="/js/whiteboardModel.js"></script>
 	<script src="/js/whiteboardController.js"></script>
 	<script src="/js/whiteboardView.js"></script>
-	<script src="chat.js"></script>
 	<script type="text/javascript">
 		$(document).ready(function(){
 			var whiteboard = new whiteboardController();
-			whiteboard.init(document.querySelector('#canvas'));
+			whiteboard.init(
+				document.querySelector('#canvas'),
+				document.querySelector('#chat_form'),
+				document.querySelector('#chat_message'),
+				document.querySelector('#messages')
+			);
 		});
 	</script>
 </head>
@@ -21,15 +26,15 @@
 	<div id="canvas-view">
 		<canvas id="canvas"></canvas>
 	</div>
+
 	<div id="chat">
-			<ul id="messages">
+		<ul id="messages"></ul>
 
-			</ul>
+		<form id="chat_form">
+			<input id="chat_message" type="text" autocomplete="off">
+			<button>Send</button>
+		</form>
+	</div>
 
-			<form id="chat_form">
-				<input id="chat_message">
-				<button>Send</button>
-			</form>
-		</div>
 </body>
 </html>

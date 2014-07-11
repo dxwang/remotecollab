@@ -3,6 +3,7 @@ $(document).ready(function(){
 window.whiteboardView = function(){
 	this.canvas = null;
 	this.context = null;
+	this.colorMap = {};
 };
 
 whiteboardView.prototype.init = function(canvas) {
@@ -12,11 +13,15 @@ whiteboardView.prototype.init = function(canvas) {
 
 	this.context = canvas.getContext('2d');
 
-	this.context.lineWidth = 1;
 	this.context.lineCap = 'round';
 };
 
-whiteboardView.prototype.draw = function(line){
+whiteboardView.prototype.draw = function(line, lineContext){
+	if (lineContext !== null){
+		this.context.lineWidth = lineContext.width || this.context.lineWidth;
+		this.context.strokeStyle = this.colorMap[lineContext.color] || this.context.strokeStyle;
+	}
+
 	if (line !== null && line.length > 0){
 		this.context.beginPath();
 		this.context.stroke();
@@ -27,5 +32,14 @@ whiteboardView.prototype.draw = function(line){
 		}
 		this.context.closePath();
 	}
+};
+
+window.chatView = function(chat){
+	this.chat = chat;
+};
+
+chatView.prototype.printMessage = function(message){
+	var newMessage = $('<li>').text(message);
+	$(this.chat).append(newMessage);
 };
 });
