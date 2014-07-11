@@ -3,7 +3,13 @@ $(document).ready(function(){
 window.whiteboardView = function(){
 	this.canvas = null;
 	this.context = null;
-	this.colorMap = {};
+	this.colorMap = {
+		'black': '#000000',
+		'red': '#ff0000',
+		'green': '#00ff00',
+		'blue': '#0000ff',
+		'yellow': '#ffff00'
+	};
 };
 
 whiteboardView.prototype.init = function(canvas) {

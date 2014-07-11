@@ -65,24 +65,55 @@ chatListener.prototype.submitEvent = function(event){
 };
 
 /**
+ * Toolbar Listener
+ */
+window.toolbarListener = function(){
+	this.colorElement = null;
+	this.widthElement = null;
+	this.colorEventHandler = null;
+	this.widthEventHandler = null;
+};
+
+toolbarListener.prototype.init = function(colorElement, widthElement, colorEventHandler, widthEventHandler){
+	this.colorElement = colorElement;
+	this.widthElement = widthElement;
+	this.colorEventHandler = colorEventHandler;
+	this.widthEventHandler = widthEventHandler;
+	$(this.colorElement).change(this.colorChangeEvent.bind(this));
+	$(this.widthElement).change(this.widthChangeEvent.bind(this));
+};
+
+toolbarListener.prototype.colorChangeEvent = function(event){
+	var newColor = $(this.colorElement).find('option:selected').val();
+	this.colorEventHandler(newColor);
+};
+
+toolbarListener.prototype.widthChangeEvent = function(event){
+	var newWidth = $(this.widthElement).find('option:selected').val();
+	this.widthEventHandler(newWidth);
+};
+
+/**
  * Line Creator Module
  */
 window.lineCreator = function(){
 	this.line = null;
 	this.clientPush = null;
 	this.serverPush = null;
+	this.getLineContext = null;
 	this.sampleRate = 1;
 	this.pointSample = this.sampleRate;
 };
 
-lineCreator.prototype.init = function(client, server){
+lineCreator.prototype.init = function(client, server, getLineContext){
 	this.clientPush = client;
 	this.serverPush = server;
+	this.getLineContext = getLineContext;
 };
 
 lineCreator.prototype.newLine = function(){
 	this.line = new lineModel();
-	// this.line.setContext(this.getLineContext());
+	this.line.setContext(this.getLineContext());
 };
 
 lineCreator.prototype.continueLine = function(data, element){
@@ -185,14 +216,15 @@ window.queueSyncManager = function(){
 	this.clientQueueInterval = null;
 	this.serverQueueInterval = null;
 
-	this.intervalTime = 1;
+	this.serverIntervalTime = 100;
+	this.clientIntervaltime = 1;
 };
 
 queueSyncManager.prototype.init = function(client, server){
 	this.clientSyncHandler = client;
 	this.serverSyncHandler = server;
-	this.clientQueueInterval = setInterval(this.clientQueueManager.bind(this), this.intervalTime);
-	this.serverQueueInterval = setInterval(this.serverQueueManager.bind(this), this.intervalTime);
+	this.clientQueueInterval = setInterval(this.clientQueueManager.bind(this), this.serverIntervalTime);
+	this.serverQueueInterval = setInterval(this.serverQueueManager.bind(this), this.clientIntervalTime);
 
 };
 
@@ -211,7 +243,7 @@ queueSyncManager.prototype.clientQueueManager = function(){
 		this.serverSyncHandler(this.clientQueue[0])
 		this.clientQueue.shift();
 	}
-	this.clientQueueInterval = setInterval(this.clientQueueManager.bind(this), this.intervalTime);
+	this.clientQueueInterval = setInterval(this.clientQueueManager.bind(this), this.serverIntervalTime);
 };
 
 queueSyncManager.prototype.serverQueueManager = function(){
@@ -221,7 +253,7 @@ queueSyncManager.prototype.serverQueueManager = function(){
 		this.clientSyncHandler(this.serverQueue[0]);
 		this.serverQueue.shift(); 
 	}
-	this.serverQueueInterval = setInterval(this.serverQueueManager.bind(this), this.intervalTime);
+	this.serverQueueInterval = setInterval(this.serverQueueManager.bind(this), this.clientIntervalTime);
 };
 
 window.whiteboardController = function(){
@@ -236,12 +268,13 @@ window.whiteboardController = function(){
 	this.chatListener = null;
 };
 
-whiteboardController.prototype.init = function(canvas, chatForm, chatMessage, printMessages){
+whiteboardController.prototype.init = function(canvas, chatForm, chatMessage, colorSelect, widthSelect, printMessages){
 	this.socket = io.connect('localhost:3000');
 	this.whiteboardView = new whiteboardView();
 	this.whiteboardView.init(canvas);
 	this.chatView = new chatView(printMessages);
 	this.whiteboardModel = new whiteboardModel(this.whiteboardView.draw.bind(this.whiteboardView));
+	this.toolbarModel = new toolbarModel();
 	this.chatModel = new messagesModel(this.chatView.printMessage.bind(this.chatView));
 	this.whiteboardServerEmitter = new serverEmitter(this.socket);
 	this.whiteboardQueueManager = new queueSyncManager();
@@ -249,6 +282,19 @@ whiteboardController.prototype.init = function(canvas, chatForm, chatMessage, pr
 		this.whiteboardModel.addLine.bind(this.whiteboardModel), 
 		this.whiteboardServerEmitter.addLine.bind(this.whiteboardServerEmitter)
 	);
+	this.toolbarListener = new toolbarListener();
+	this.toolbarListener.init(
+		colorSelect, 
+		widthSelect, 
+		this.toolbarModel.setColor.bind(this.toolbarModel),
+		this.toolbarModel.setWidth.bind(this.toolbarModel)
+	);
+	var chatHandler = function(message){
+		this.whiteboardServerEmitter.addMessage(message);
+		this.chatModel.addMessage('You: ' + message);
+	};
+	this.chatListener = new chatListener();
+	this.chatListener.init(chatForm, chatMessage, chatHandler.bind(this));
 	this.whiteboardServerListener = new serverListener(this.socket);
 	this.whiteboardServerListener.init(
 		this.whiteboardQueueManager.addServerQueue.bind(this.whiteboardQueueManager),
@@ -257,7 +303,8 @@ whiteboardController.prototype.init = function(canvas, chatForm, chatMessage, pr
 	this.whiteboardLineCreator = new lineCreator();
 	this.whiteboardLineCreator.init(
 		this.whiteboardQueueManager.addClientQueue.bind(this.whiteboardQueueManager), 
-		this.whiteboardQueueManager.addServerQueue.bind(this.whiteboardQueueManager)
+		this.whiteboardQueueManager.addServerQueue.bind(this.whiteboardQueueManager),
+		this.toolbarModel.getContext.bind(this.toolbarModel)
 	);
 	this.whiteboardListener = new whiteboardListener();
 	this.whiteboardListener.init(
@@ -266,12 +313,6 @@ whiteboardController.prototype.init = function(canvas, chatForm, chatMessage, pr
 		this.whiteboardLineCreator.continueLine.bind(this.whiteboardLineCreator),
 		this.whiteboardLineCreator.endLine.bind(this.whiteboardLineCreator) 
 	);
-	var chatHandler = function(message){
-		this.whiteboardServerEmitter.addMessage(message);
-		this.chatModel.addMessage('You: ' + message);
-	};
-	this.chatListener = new chatListener();
-	this.chatListener.init(chatForm, chatMessage, chatHandler.bind(this));
 	this.whiteboardServerEmitter.newSession(document.location.pathname.split('whiteboard/')[1]);
 };
 });

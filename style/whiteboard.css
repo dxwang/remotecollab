@@ -11,3 +11,9 @@
 	overflow: scroll;
 	float: left;
 }
+
+#toolbar {
+	width: 20%;
+	outline: 1px solid black;
+	float: right;
+}

@@ -50,6 +50,35 @@ messagesModel.prototype.addMessage = function(message){
 };
 
 /**
+ * Toolbar Model
+ */
+window.toolbarModel = function(){
+	this.id = Date.now();
+	this.color = 'black';
+	this.width = '1';
+};
+
+toolbarModel.prototype.getColor = function(){
+	return this.color;
+}
+
+toolbarModel.prototype.setColor = function(color){
+	this.color = color;
+};
+
+toolbarModel.prototype.getWidth = function(){
+	return this.width;
+}
+
+toolbarModel.prototype.setWidth = function(width){
+	this.width = width;
+};
+
+toolbarModel.prototype.getContext = function(){
+	return {color: this.color, width: this.width};
+}
+
+/**
  * Whiteboard Model
  */
 window.whiteboardModel = function(drawFunc){
