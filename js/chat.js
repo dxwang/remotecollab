@@ -1,4 +1,7 @@
-var socket = io.connect('ec2-54-88-235-129.compute-1.amazonaws.com:3000');
+var socket = io.connect('ec2-54-85-43-74.compute-1.amazonaws.com:3000');
+//var socket = io.connect('localhost:3000');
+
+>>>>>>> 56f6520a41008ff8ffc457b212e2243f5a9bf1d9
 $(document).ready(function () {
 	
 
