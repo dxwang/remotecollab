@@ -267,7 +267,7 @@ window.queueSyncManager = function(){
 	this.clientQueueInterval = null;
 	this.serverQueueInterval = null;
 
-	this.serverIntervalTime = 500;
+	this.serverIntervalTime = 100;
 	this.clientIntervaltime = 100;
 };
 
