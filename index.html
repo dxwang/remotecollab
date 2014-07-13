@@ -25,14 +25,21 @@
 
 	<!--Whiteboard-->
     <script src="/js/whiteboardModel.js"></script>
-	<script src="/js/whiteboardController.js"></script>
-	<script src="/js/whiteboardView.js"></script>
-	<script src="/js/chat.js"></script>
-	<script type="text/javascript">
+    <script src="/js/whiteboardController.js"></script>
+    <script src="/js/whiteboardView.js"></script>
+    <script src="/js/chat.js"></script>
+    <script type="text/javascript">
 		$(document).ready(function(){
-			whiteboardView.init(document.querySelector('#canvas'));
 			var whiteboard = new whiteboardController();
-			whiteboard.init();
+			whiteboard.init(
+				document.querySelector('#canvas'),
+				document.querySelector('#chat_form'),
+				document.querySelector('#chat_message'),
+				document.querySelector('#color-picker'),
+				document.querySelector('#width-picker'),
+				document.querySelector('#tool-picker'),
+				document.querySelector('#messages')
+			);
 		});
 	</script>
 
@@ -103,6 +110,27 @@
 		<canvas id="canvas"></canvas>
 	</div>
 
+	<div id="toolbar">
+		<select id="tool-picker">
+			<option value="pencil" selected="selected">Pencil</option>
+			<option value="eraser">Eraser</option>
+		</select>
+		<select id="color-picker">
+			<option value="black" selected="selected">Black</option>
+			<option value="red">Red</option>
+			<option value="green">Green</option>
+			<option value="blue">Blue</option>
+			<option value="yellow">Yellow</option>
+		</select>
+		<select id="width-picker">
+			<option value="1">1</option>
+			<option value="2">2</option>
+			<option value="3" selected="selected">3</option>
+			<option value="4">4</option>
+			<option value="5">5</option>
+		</select>
+	</div>
+
 	<div id="chat">
 		<ul id="messages"></ul>
 
@@ -118,5 +146,6 @@
     <script src="/js/bootstrap.min.js"></script>
     <script src="/js/tinycolor-0.9.15.min.js"></script>
     <script src="/js/pick-a-color-1.2.3.min.js"></script>
+
 </body>
 </html>

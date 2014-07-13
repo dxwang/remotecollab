@@ -27,7 +27,7 @@ function initializeModels(dbConn) {
 
 	var Schema = mongoose.Schema;
 	var PointSchema = new Schema({x: Number, y: Number});
-	var LineSchema = new Schema({id: Number, color: String, data: [PointSchema]});
+	var LineSchema = new Schema({id: String, width: Number, color: String, data: [PointSchema]});
 	var BoardSchema = new Schema({id: Number, data: [LineSchema]});
 	var CounterSchema = new Schema({id: String, count: Number});
 	
@@ -155,8 +155,6 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 		var lineData = data.line;
 		WhiteBoards.addLine(connHandler.whiteboard, lineData, function(err, whiteboard, line) {
 			if(!err) {
-				// connHandler.whiteboard = whiteboard;
-				socket.emit('line added', { id: line.id });
 				socket.to(connHandler.whiteboard.id).emit('draw', {'line': line});
 			} else {
 				socket.emit('remotecollab error', { error: "Error adding line to whiteboard" });
@@ -225,7 +223,6 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 	},
 	addLine: function(whiteboard,line,callback) {
 		var lineModel = new LineModel(line);
-		lineModel.id = whiteboard.data.length;
 		whiteboard.data.push(lineModel);
 		var err;
 		callback(err, whiteboard, lineModel);

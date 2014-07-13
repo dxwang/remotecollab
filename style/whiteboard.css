@@ -19,3 +19,9 @@
 .pick-a-color-markup {
 	width: 1px;
 }
+
+#toolbar {
+	width: 20%;
+	outline: 1px solid black;
+	float: right;
+}
