@@ -11,3 +11,11 @@
 	overflow: scroll;
 	float: left;
 }
+
+#line-colour-picker {
+	width: 1px;
+}
+
+.pick-a-color-markup {
+	width: 1px;
+}
