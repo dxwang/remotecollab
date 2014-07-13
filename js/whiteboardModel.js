@@ -84,12 +84,32 @@ toolbarModel.prototype.getContext = function(){
 window.whiteboardModel = function(drawFunc){
 	this.id = Date.now();
 	this.lines = [];
+	this.currentLine = null;
 	this.draw = drawFunc || function(){};
 };
 
 whiteboardModel.prototype.getId = function(){
 	return this.id;
 };
+
+whiteboardModel.prototype.newLine = function(context) {
+	this.currentLine = new lineModel();
+	this.currentLine.setContext(context);
+}
+
+whiteboardModel.prototype.continueLine = function(point) {
+	this.currentLine.addPoint(point);
+	var points = this.currentLine.getLine();
+	if(points.length >= 2) {
+		var drawPoints = [ points[points.length-2], points[points.length-1] ];
+		this.draw(drawPoints, this.currentLine.getContext());
+	}
+}
+
+whiteboardModel.prototype.endLine = function() {
+	this.lines.push(this.line);
+	this.currentLine = null;
+}
 
 whiteboardModel.prototype.addLine = function(data){
 	var line = new lineModel(data.id, data.points, data.context);

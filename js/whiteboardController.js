@@ -101,11 +101,13 @@ window.lineCreator = function(){
 	this.clientPush = null;
 	this.serverPush = null;
 	this.getLineContext = null;
-	this.sampleRate = 1;
-	this.pointSample = this.sampleRate;
+	this.sampler = new pointSampler();
 };
 
-lineCreator.prototype.init = function(client, server, getLineContext){
+lineCreator.prototype.init = function(modelNewLine, modelContinueLine, modelEndLine, client, server, getLineContext){
+	this.modelNewLine = modelNewLine;
+	this.modelContinueLine = modelContinueLine;
+	this.modelEndLine = modelEndLine;
 	this.clientPush = client;
 	this.serverPush = server;
 	this.getLineContext = getLineContext;
@@ -114,17 +116,38 @@ lineCreator.prototype.init = function(client, server, getLineContext){
 lineCreator.prototype.newLine = function(){
 	this.line = new lineModel();
 	this.line.setContext(this.getLineContext());
+	this.modelNewLine(this.line.getContext());
 };
 
 lineCreator.prototype.continueLine = function(data, element){
-	this.line.addPoint(this.relativeCoordinateGetter(data.pageX, data.pageY, element));
-	this.pointSampler(this.line, false);
+	var point = this.relativeCoordinateGetter(data.pageX, data.pageY, element);
+	this.sampler.setCurrentPoint(point);
+	if(this.sampler.shouldSegment()) {
+		console.log("Line segmented");
+		// End the current line with this point
+		this.line.addPoint(point);
+		this.modelContinueLine(point);
+		this.endLine(true);
+		// Start a new line with this point
+		this.newLine();
+		this.line.addPoint(point);
+		this.modelContinueLine(point);
+		this.sampler.currentPointAdded();
+	} else if(this.sampler.shouldAdd()) {
+		console.log("Point added");
+		this.line.addPoint(point);
+		this.modelContinueLine(point);
+		this.sampler.currentPointAdded();
+	}
 };
 
-lineCreator.prototype.endLine = function(){
-	this.pointSampler(this.line, true);
+lineCreator.prototype.endLine = function(segment){
+	if(!segment) {
+		this.sampler.endSampling();
+	}
+	this.modelEndLine();
+	this.serverPush(this.line);
 	this.line = null;
-	this.pointSample = this.sampleRate;
 };
 
 lineCreator.prototype.relativeCoordinateGetter = function(pageX, pageY, element){
@@ -133,15 +156,43 @@ lineCreator.prototype.relativeCoordinateGetter = function(pageX, pageY, element)
 	return {x: relx, y: rely};
 };
 
-lineCreator.prototype.pointSampler = function(line, noSample){
-	if (noSample || this.pointSample === 0){
-		this.clientPush(line);
-		this.serverPush(line);
-		this.pointSample = this.sampleRate;
-	} else {
-		this.pointSample--;
+function pointSampler() {
+	this.lastPoint = null;
+	this.currentPoint = null;
+	this.sampleRate = 4;
+	this.pointsSampled = 0;
+	this.minDist = 10;
+}
+pointSampler.prototype.setCurrentPoint = function(point) {
+	this.currentPoint = point;
+}
+pointSampler.prototype.shouldAdd = function() {
+	if(this.lastPoint == null) {
+		return true;
+	} else if(this.currentPoint != null) {
+		var dx = this.currentPoint.x - this.lastPoint.x;
+		var dy = this.currentPoint.y - this.lastPoint.y;
+		return Math.floor(Math.sqrt( dx*dx + dy*dy )) > this.minDist;
 	}
-};
+	
+	return false;
+}	
+pointSampler.prototype.shouldSegment = function() {
+	if(this.pointsSampled === this.sampleRate) {
+		return true;
+	}
+	return false;
+}
+pointSampler.prototype.endSampling = function() {
+	this.lastPoint = null;
+	this.currentPoint = null;
+	this.pointsSampled = 0;
+}
+pointSampler.prototype.currentPointAdded = function() {
+	this.lastPoint = this.currentPoint;
+	this.pointsSampled++;
+	if(this.pointsSampled > this.sampleRate) this.pointsSampled = 1;
+}
 
 /**
  * Server Listener Module
@@ -302,6 +353,9 @@ whiteboardController.prototype.init = function(canvas, chatForm, chatMessage, co
 	);
 	this.whiteboardLineCreator = new lineCreator();
 	this.whiteboardLineCreator.init(
+		this.whiteboardModel.newLine.bind(this.whiteboardModel),
+		this.whiteboardModel.continueLine.bind(this.whiteboardModel),
+		this.whiteboardModel.endLine.bind(this.whiteboardModel),
 		this.whiteboardQueueManager.addClientQueue.bind(this.whiteboardQueueManager), 
 		this.whiteboardQueueManager.addServerQueue.bind(this.whiteboardQueueManager),
 		this.toolbarModel.getContext.bind(this.toolbarModel)
