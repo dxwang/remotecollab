@@ -49,6 +49,26 @@ function initializeModels(dbConn) {
 	});
 }
 module.exports.initializeModels = initializeModels;
+
+function WhiteboardSyncer(socket, data) {
+	this.interval = 250;
+	this.timer = null;
+	this.data = data;
+	this.totalLines = data.length;
+	this.linesSent = 0;
+	this.linesSentPerInterval = 10;
+	
+	this.syncFunc = function() {
+		if(this.linesSent < this.totalLines) {
+			var i;
+			var dataToSend;
+			for(i=this.linesSent; i < this.totalLines && i < this.linesSent + this.linesSentPerInterval; i++) {
+				dataToSend.push(this.data[i]);
+			}
+			this.linesSent = this.linesSent + i;
+		}
+	}
+}
 	
 /* 
  * Route new connections to appropriate whiteboard handler 
