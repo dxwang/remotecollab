@@ -40,7 +40,6 @@ whiteboardListener.prototype.mouseContinue = function(){
 };
 
 whiteboardListener.prototype.mouseEnd = function(event){
-	console.log("Mouse up detected");
 	this.eventEndHandler();
 	$(this.element).unbind("mousemove");
 	$(this.element).unbind("mouseup");
@@ -139,15 +138,15 @@ toolSelector.prototype.changeTool = function(newTool){
  */
 window.lineManager = function(){
 	this.line = null;
-	this.clientPush = null;
 	this.serverPush = null;
 	this.getLineContext = null;
-	this.sampleRate = 1;
-	this.pointSample = this.sampleRate;
+	this.sampler = new pointSampler();
 };
 
-lineManager.prototype.init = function(client, server, getLineContext){
-	this.clientPush = client;
+lineManager.prototype.init = function(modelNewLine, modelContinueLine, modelEndLine, server, getLineContext){
+	this.modelNewLine = modelNewLine;
+	this.modelContinueLine = modelContinueLine;
+	this.modelEndLine = modelEndLine;
 	this.serverPush = server;
 	this.getLineContext = getLineContext;
 };
@@ -155,22 +154,41 @@ lineManager.prototype.init = function(client, server, getLineContext){
 lineManager.prototype.newLine = function(){
 	this.line = new lineModel();
 	this.line.setContext(this.getLineContext());
+	this.modelNewLine(this.line.getContext());
+};
+
+lineManager.prototype.continueLine = function(data, element){
+	var point = this.relativeCoordinateGetter(data.pageX, data.pageY, element);
+	this.sampler.setCurrentPoint(point);
+	if(this.sampler.shouldSegment()) {
+		// End the current line with this point
+		this.line.addPoint(point);
+		this.modelContinueLine(point);
+		this.endLine(true);
+		// Start a new line with this point
+		this.newLine();
+		this.line.addPoint(point);
+		this.modelContinueLine(point);
+		this.sampler.currentPointAdded();
+	} else if(this.sampler.shouldAdd()) {
+		this.line.addPoint(point);
+		this.modelContinueLine(point);
+		this.sampler.currentPointAdded();
+	}
+};
+
+lineManager.prototype.endLine = function(segment){
+	if(!segment) {
+		this.sampler.endSampling();
+	}
+	this.modelEndLine();
+	this.serverPush(this.line);
+	this.line = null;
 };
 
 lineManager.prototype.setEraseStart = function(data, element){
 	this.eraseStart = this.relativeCoordinateGetter(data.pageX, data.pageY, element);
 }
-
-lineManager.prototype.continueLine = function(data, element){
-	this.line.addPoint(this.relativeCoordinateGetter(data.pageX, data.pageY, element));
-	this.pointSampler(this.line, false);
-};
-
-lineManager.prototype.endLine = function(){
-	this.pointSampler(this.line, true);
-	this.line = null;
-	this.pointSample = this.sampleRate;
-};
 
 lineManager.prototype.setEraseEnd = function(data, element){
 	this.eraseEnd = this.relativeCoordinateGetter(data.pageX, data.pageY, element);
@@ -182,15 +200,43 @@ lineManager.prototype.relativeCoordinateGetter = function(pageX, pageY, element)
 	return {x: relx, y: rely};
 };
 
-lineManager.prototype.pointSampler = function(line, noSample){
-	if (noSample || this.pointSample === 0){
-		this.clientPush(line);
-		this.serverPush(line);
-		this.pointSample = this.sampleRate;
-	} else {
-		this.pointSample--;
+window.pointSampler = function() {
+	this.lastPoint = null;
+	this.currentPoint = null;
+	this.sampleRate = 4;
+	this.pointsSampled = 0;
+	this.minDist = 10;
+}
+pointSampler.prototype.setCurrentPoint = function(point) {
+	this.currentPoint = point;
+}
+pointSampler.prototype.shouldAdd = function() {
+	if(this.lastPoint == null) {
+		return true;
+	} else if(this.currentPoint != null) {
+		var dx = this.currentPoint.x - this.lastPoint.x;
+		var dy = this.currentPoint.y - this.lastPoint.y;
+		return Math.floor(Math.sqrt( dx*dx + dy*dy )) > this.minDist;
 	}
-};
+	
+	return false;
+}	
+pointSampler.prototype.shouldSegment = function() {
+	if(this.pointsSampled === this.sampleRate) {
+		return true;
+	}
+	return false;
+}
+pointSampler.prototype.endSampling = function() {
+	this.lastPoint = null;
+	this.currentPoint = null;
+	this.pointsSampled = 0;
+}
+pointSampler.prototype.currentPointAdded = function() {
+	this.lastPoint = this.currentPoint;
+	this.pointsSampled++;
+	if(this.pointsSampled > this.sampleRate) this.pointsSampled = 1;
+}
 
 /**
  * Server Listener Module
@@ -244,6 +290,7 @@ serverEmitter.prototype.newSession = function(id){
 };
 
 serverEmitter.prototype.addLine = function(line){
+	console.log("Added");
 	this.socket.emit('draw', {line: {color: line.context.color, data: line.points}});
 };
 
@@ -265,7 +312,7 @@ window.queueSyncManager = function(){
 	this.serverQueueInterval = null;
 
 	this.serverIntervalTime = 100;
-	this.clientIntervaltime = 1;
+	this.clientIntervaltime = 100;
 };
 
 queueSyncManager.prototype.init = function(clientCreate, serverCreate, clientErase, serverErase){
@@ -275,27 +322,31 @@ queueSyncManager.prototype.init = function(clientCreate, serverCreate, clientEra
 	this.serverEraseHandler = serverErase;
 	this.clientQueueInterval = setInterval(this.clientQueueManager.bind(this), this.serverIntervalTime);
 	this.serverQueueInterval = setInterval(this.serverQueueManager.bind(this), this.clientIntervalTime);
-
 };
 
+// Client calls this to add command.
 queueSyncManager.prototype.addClientQueue = function(data){
 	this.clientQueue.push({'type': 'add', 'data': data});
 };
 
+// Server calls this to add command.
 queueSyncManager.prototype.addServerQueue = function(data){
 	this.serverQueue.push({'type': 'add', 'data': data});
 };
 
+// Client calls this to remove command.
 queueSyncManager.prototype.removeClientQueue = function(data){
 	this.clientQueue.push({'type': 'remove', 'data': data});
 };
 
+// Server calls this to remove command.
 queueSyncManager.prototype.removeServerQueue = function(data){
 	this.serverQueue.push({'type': 'remove', 'data': data});
 };
 
+// Takes commands from the client and syncs them to the server.
 queueSyncManager.prototype.clientQueueManager = function(){
-	clearInterval(this.clientQueueInterval);
+	// clearInterval(this.clientQueueInterval);
 	var that = this;
 	while (this.clientQueue.length > 0){
 		if (this.clientQueue[0].type === 'remove'){
@@ -303,13 +354,15 @@ queueSyncManager.prototype.clientQueueManager = function(){
 		} else {
 			this.serverSyncHandler(this.clientQueue[0].data);
 		}
+		this.clientSyncHandler(this.clientQueue[0])
 		this.clientQueue.shift();
 	}
-	this.clientQueueInterval = setInterval(this.clientQueueManager.bind(this), this.serverIntervalTime);
+	// this.clientQueueInterval = setInterval(this.clientQueueManager.bind(this), this.serverIntervalTime);
 };
 
+// Takes commands from the server and syncs them to the client.
 queueSyncManager.prototype.serverQueueManager = function(){
-	clearInterval(this.serverQueueInterval);
+	// clearInterval(this.serverQueueInterval);
 	var that = this;
 	while (this.serverQueue.length > 0){
 		if (this.serverQueue[0].type === 'remove'){
@@ -319,7 +372,7 @@ queueSyncManager.prototype.serverQueueManager = function(){
 		}
 		this.serverQueue.shift();
 	}
-	this.serverQueueInterval = setInterval(this.serverQueueManager.bind(this), this.clientIntervalTime);
+	// this.serverQueueInterval = setInterval(this.serverQueueManager.bind(this), this.clientIntervalTime);
 };
 
 window.whiteboardController = function(){
@@ -336,35 +389,45 @@ window.whiteboardController = function(){
 
 whiteboardController.prototype.init = function(canvas, chatForm, chatMessage, colorSelect, widthSelect, toolSelect, printMessages){
 	this.socket = io.connect('localhost:3000');
+
 	this.whiteboardView = new whiteboardView();
 	this.whiteboardView.init(canvas);
 	this.chatView = new chatView(printMessages);
+
 	this.whiteboardModel = new whiteboardModel(this.whiteboardView.draw.bind(this.whiteboardView));
 	this.toolbarModel = new toolbarModel();
 	this.chatModel = new messagesModel(this.chatView.printMessage.bind(this.chatView));
+
 	this.whiteboardServerEmitter = new serverEmitter(this.socket);
+
 	this.whiteboardQueueManager = new queueSyncManager();
 	this.whiteboardQueueManager.init(
 		this.whiteboardModel.addLine.bind(this.whiteboardModel), 
 		this.whiteboardServerEmitter.addLine.bind(this.whiteboardServerEmitter)
 	);
+
 	var chatHandler = function(message){
 		this.whiteboardServerEmitter.addMessage(message);
 		this.chatModel.addMessage('You: ' + message);
 	};
 	this.chatListener = new chatListener();
 	this.chatListener.init(chatForm, chatMessage, chatHandler.bind(this));
+
 	this.whiteboardServerListener = new serverListener(this.socket);
 	this.whiteboardServerListener.init(
 		this.whiteboardQueueManager.addServerQueue.bind(this.whiteboardQueueManager),
 		this.chatModel.addMessage.bind(this.chatModel)
 	);
+
 	this.whiteboardLineManager = new lineManager();
 	this.whiteboardLineManager.init(
-		this.whiteboardQueueManager.addClientQueue.bind(this.whiteboardQueueManager), 
-		this.whiteboardQueueManager.addServerQueue.bind(this.whiteboardQueueManager),
+		this.whiteboardModel.newLine.bind(this.whiteboardModel),
+		this.whiteboardModel.continueLine.bind(this.whiteboardModel),
+		this.whiteboardModel.endLine.bind(this.whiteboardModel),
+		this.whiteboardQueueManager.addClientQueue.bind(this.whiteboardQueueManager),
 		this.toolbarModel.getContext.bind(this.toolbarModel)
 	);
+
 	this.drawListener = new whiteboardListener();
 	this.drawListener.init(
 		canvas,
@@ -372,11 +435,13 @@ whiteboardController.prototype.init = function(canvas, chatForm, chatMessage, co
 		this.whiteboardLineManager.continueLine.bind(this.whiteboardLineManager),
 		this.whiteboardLineManager.endLine.bind(this.whiteboardLineManager) 
 	);
+
 	// this.eraseListener = new whiteboardListener();
 	this.toolSelector = new toolSelector();
 	this.toolSelector.init({
 		'pencil': this.drawListener
 	});
+
 	this.toolbarListener = new toolbarListener();
 	this.toolbarListener.init(
 		colorSelect, 
@@ -386,6 +451,7 @@ whiteboardController.prototype.init = function(canvas, chatForm, chatMessage, co
 		this.toolbarModel.setWidth.bind(this.toolbarModel),
 		this.toolSelector.changeTool.bind(this.toolSelector)
 	);
+
 	this.whiteboardServerEmitter.newSession(document.location.pathname.split('whiteboard/')[1]);
 };
 });
