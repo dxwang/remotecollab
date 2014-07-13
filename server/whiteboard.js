@@ -152,6 +152,7 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
  WhiteboardHandler.prototype.handleDrawMessage = function(connHandler, socket) {
 	return function(data) {
 		var lineData = data.line;
+		console.log("Received a line");
 		WhiteBoards.addLine(connHandler.whiteboard, lineData, function(err, whiteboard, line) {
 			if(!err) {
 				// connHandler.whiteboard = whiteboard;

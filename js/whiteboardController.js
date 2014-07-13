@@ -267,15 +267,15 @@ window.queueSyncManager = function(){
 	this.clientQueueInterval = null;
 	this.serverQueueInterval = null;
 
-	this.serverIntervalTime = 100;
-	this.clientIntervaltime = 1;
+	this.serverIntervalTime = 500;
+	this.clientIntervaltime = 100;
 };
 
 queueSyncManager.prototype.init = function(client, server){
 	this.clientSyncHandler = client;
 	this.serverSyncHandler = server;
-	this.clientQueueInterval = setInterval(this.clientQueueManager.bind(this), this.serverIntervalTime);
-	this.serverQueueInterval = setInterval(this.serverQueueManager.bind(this), this.clientIntervalTime);
+	this.clientQueueInterval = setInterval(this.clientQueueManager.bind(this), this.clientIntervalTime);
+	this.serverQueueInterval = setInterval(this.serverQueueManager.bind(this), this.serverIntervalTime);
 
 };
 
@@ -284,27 +284,29 @@ queueSyncManager.prototype.addClientQueue = function(data){
 };
 
 queueSyncManager.prototype.addServerQueue = function(data){
+	console.log("Adding line to server queue");
 	this.serverQueue.push(data);
 };
 
 queueSyncManager.prototype.clientQueueManager = function(){
-	clearInterval(this.clientQueueInterval);
+	// clearInterval(this.clientQueueInterval);
 	var that = this;
 	while (this.clientQueue.length > 0){
-		this.serverSyncHandler(this.clientQueue[0])
+		this.clientSyncHandler(this.clientQueue[0])
 		this.clientQueue.shift();
 	}
-	this.clientQueueInterval = setInterval(this.clientQueueManager.bind(this), this.serverIntervalTime);
+	// this.clientQueueInterval = setInterval(this.clientQueueManager.bind(this), this.serverIntervalTime);
 };
 
 queueSyncManager.prototype.serverQueueManager = function(){
-	clearInterval(this.serverQueueInterval);
+	// clearInterval(this.serverQueueInterval);
 	var that = this;
+	console.log("Syncing ... server queue is " + this.serverQueue.length);
 	while (this.serverQueue.length > 0){
-		this.clientSyncHandler(this.serverQueue[0]);
+		this.serverSyncHandler(this.serverQueue[0]);
 		this.serverQueue.shift(); 
 	}
-	this.serverQueueInterval = setInterval(this.serverQueueManager.bind(this), this.clientIntervalTime);
+	// this.serverQueueInterval = setInterval(this.serverQueueManager.bind(this), this.clientIntervalTime);
 };
 
 window.whiteboardController = function(){
@@ -348,7 +350,7 @@ whiteboardController.prototype.init = function(canvas, chatForm, chatMessage, co
 	this.chatListener.init(chatForm, chatMessage, chatHandler.bind(this));
 	this.whiteboardServerListener = new serverListener(this.socket);
 	this.whiteboardServerListener.init(
-		this.whiteboardQueueManager.addServerQueue.bind(this.whiteboardQueueManager),
+		this.whiteboardQueueManager.addClientQueue.bind(this.whiteboardQueueManager),
 		this.chatModel.addMessage.bind(this.chatModel)
 	);
 	this.whiteboardLineCreator = new lineCreator();
