@@ -1,68 +1,318 @@
 $(document).ready(function(){
 
-window.whiteboardController = {
-	init: function(){
-		whiteboardView.canvasObj.on("mousedown", whiteboardController.continueDraw);
-	},
-	/**
-     * Resolves the relative width and height of the canvas
-     * element. Relative parameters can vary depending on the
-     * zoom. Both are equal to 1 if no zoom is encountered.
-     * 
-     * @return An array containing the relative width as first
-     * element and relative height as second.
-     */
-    getRelative: function() {
-	    return {width: whiteboardView.canvas.width/whiteboardView.canvas.offsetWidth,
-			    height: whiteboardView.canvas.height/whiteboardView.canvas.offsetHeight};
-    },
+/**
+ * Whiteboard Listener Module
+ */
+window.whiteboardListener = function(){
+	this.element = null;
+	this.eventStartHandler = null;
+	this.eventContinueHandler = null;
+	this.eventEndHandler = null;
+};
 
-	/**
-	 * Resolves the X coordinate of the given event inside
-	 * the canvas element.
-	 * 
-	 * @param event The event that has been executed.
-	 * @return The x coordinate of the event inside the 
-	 * canvas element.
-	 */
-	getX: function(event) {
-		var cssx = (event.pageX - whiteboardView.canvasObj.offset().left);
-	    var xrel = whiteboardController.getRelative().width;
-	    var canvasx = cssx * xrel;
-	    return canvasx;
-	},
-	
-	/**
-	 * Resolves the Y coordinate of the given event inside
-	 * the canvas element.
-	 * 
-	 * @param event The event that has been executed.
-	 * @return The y coordinate of the event inside the 
-	 * canvas element.
-	 */
-	getY: function(event) {
-	    var cssy = (event.pageY - whiteboardView.canvasObj.offset().top);
-	    var yrel = whiteboardController.getRelative().height;
-	    var canvasy = cssy * yrel;
-	    return canvasy;
-	},
+whiteboardListener.prototype.init = function(element, start, cont, end){
+	this.element = element;
+	this.eventStartHandler = start;
+	this.eventContinueHandler = cont;
+	this.eventEndHandler = end;
+	$(this.element).on("mousedown", this.mouseStart.bind(this));
+};
 
-	continueDraw: function(event){
-		whiteboardView.canvasObj.bind("mousemove", function(event){
-			whiteboardModel.addPointToCurrentLine([whiteboardController.getX(event), whiteboardController.getY(event)]);
-		});
-		whiteboardView.canvasObj.bind("mouseup", whiteboardController.endDraw);
-		whiteboardView.canvasObj.bind("mouseout", whiteboardController.endDraw);
-	},
+whiteboardListener.prototype.mouseStart = function(event){
+	this.eventStartHandler();
+	this.mouseContinue();
+};
 
-	endDraw: function(event){
-		whiteboardView.canvasObj.unbind("mousemove");
-		whiteboardView.canvasObj.unbind("mouseup");
-		whiteboardView.canvasObj.unbind("mouseout");
-
-		whiteboardModel.endCurrentLine();
+whiteboardListener.prototype.mouseContinue = function(){
+	var mouseContinueFunc = function(event){
+		this.eventContinueHandler(event, this.element);
 	}
+	$(this.element).bind("mousemove", mouseContinueFunc.bind(this));
+	$(this.element).bind("mouseup", this.mouseEnd.bind(this));
+	$(this.element).bind("mouseout", this.mouseEnd.bind(this));
+};
+
+whiteboardListener.prototype.mouseEnd = function(event){
+	this.eventEndHandler();
+	$(this.element).unbind("mousemove");
+	$(this.element).unbind("mouseup");
+	$(this.element).unbind("mouseout");
+};
+
+/**
+ * Chat Event Listener
+ */
+window.chatListener = function(){
+	this.element = null;
+	this.inputElement = null;
+	this.eventHandler = null;
+};
+
+chatListener.prototype.init = function(element, inputElement, eventHandler){
+	this.element = element;
+	this.inputElement = inputElement;
+	this.eventHandler = eventHandler;
+	$(this.element).submit(this.submitEvent.bind(this));
+};
+
+chatListener.prototype.submitEvent = function(event){
+	event.preventDefault();
+	var message = $(this.inputElement).val();
+	if (message !== ''){
+		this.eventHandler(message);
+		$(this.inputElement).val('');
+	}
+};
+
+/**
+ * Toolbar Listener
+ */
+window.toolbarListener = function(){
+	this.colorElement = null;
+	this.widthElement = null;
+	this.colorEventHandler = null;
+	this.widthEventHandler = null;
+};
+
+toolbarListener.prototype.init = function(colorElement, widthElement, colorEventHandler, widthEventHandler){
+	this.colorElement = colorElement;
+	this.widthElement = widthElement;
+	this.colorEventHandler = colorEventHandler;
+	this.widthEventHandler = widthEventHandler;
+	$(this.colorElement).change(this.colorChangeEvent.bind(this));
+	$(this.widthElement).change(this.widthChangeEvent.bind(this));
+};
+
+toolbarListener.prototype.colorChangeEvent = function(event){
+	var newColor = $(this.colorElement).find('option:selected').val();
+	this.colorEventHandler(newColor);
+};
+
+toolbarListener.prototype.widthChangeEvent = function(event){
+	var newWidth = $(this.widthElement).find('option:selected').val();
+	this.widthEventHandler(newWidth);
+};
+
+/**
+ * Line Creator Module
+ */
+window.lineCreator = function(){
+	this.line = null;
+	this.clientPush = null;
+	this.serverPush = null;
+	this.getLineContext = null;
+	this.sampleRate = 1;
+	this.pointSample = this.sampleRate;
+};
+
+lineCreator.prototype.init = function(client, server, getLineContext){
+	this.clientPush = client;
+	this.serverPush = server;
+	this.getLineContext = getLineContext;
+};
+
+lineCreator.prototype.newLine = function(){
+	this.line = new lineModel();
+	this.line.setContext(this.getLineContext());
+};
+
+lineCreator.prototype.continueLine = function(data, element){
+	this.line.addPoint(this.relativeCoordinateGetter(data.pageX, data.pageY, element));
+	this.pointSampler(this.line, false);
+};
+
+lineCreator.prototype.endLine = function(){
+	this.pointSampler(this.line, true);
+	this.line = null;
+	this.pointSample = this.sampleRate;
+};
+
+lineCreator.prototype.relativeCoordinateGetter = function(pageX, pageY, element){
+	var relx = (pageX - element.offsetLeft) * (element.width / element.offsetWidth);
+	var rely = (pageY - element.offsetTop) * (element.height / element.offsetHeight);
+	return {x: relx, y: rely};
+};
+
+lineCreator.prototype.pointSampler = function(line, noSample){
+	if (noSample || this.pointSample === 0){
+		this.clientPush(line);
+		this.serverPush(line);
+		this.pointSample = this.sampleRate;
+	} else {
+		this.pointSample--;
+	}
+};
+
+/**
+ * Server Listener Module
+ */
+window.serverListener = function(socket){
+	this.socket = socket;
+	this.lineHandler = null;
+	this.messageHandler = null;
+};
+
+serverListener.prototype.init = function(line, message){
+	this.lineHandler = line;
+	this.messageHandler = message;
+	this.lineCollectionSync();
+	this.lineSync();
+	this.messageSync();
+};
+
+serverListener.prototype.lineCollectionSync = function(){
+	var sync = function(data){
+		for (var i = 0; i < data.length; i++){
+			// this.lineHandler({id: data[i].id, points: data[i].data, context: ???});
+			this.lineHandler({id: data[i].id, points: data[i].data});
+		}
+	};
+	this.socket.on("sync", sync.bind(this));
+};
+
+serverListener.prototype.lineSync = function(){
+	var sync = function(data){
+		// this.lineHandler({id: data.line.id, points: data.line.data, context: ???});
+		this.lineHandler({id: data.line.id, points: data.line.data});
+	}
+	this.socket.on("draw", sync.bind(this));
+};
+
+serverListener.prototype.messageSync = function(){
+	var sync = function(data){
+		this.messageHandler(data.message);
+	}
+	this.socket.on("chat", sync.bind(this));
+};
+
+/**
+ * Server Emitter Module
+ */
+window.serverEmitter = function(socket){
+	this.socket = socket;
+};
+
+serverEmitter.prototype.newSession = function(id){
+	this.socket.emit('new user', { whiteboardId: id });
+};
+
+serverEmitter.prototype.addLine = function(line){
+	// this.socket.emit('draw', {line: {color: line.context, data: line.points}});
+	this.socket.emit('draw', {'line': {'color': 'black', 'data': line.points}});
+};
+
+serverEmitter.prototype.addMessage = function(message){
+	this.socket.emit('chat', {'message': message});
 }
 
+/**
+ * Queue Sync Manager
+ */
+window.queueSyncManager = function(){
+	this.clientSyncHandler = null;
+	this.serverSyncHandler = null;
+	this.clientQueue = [];
+	this.serverQueue = [];
+	this.clientQueueInterval = null;
+	this.serverQueueInterval = null;
 
+	this.serverIntervalTime = 100;
+	this.clientIntervaltime = 1;
+};
+
+queueSyncManager.prototype.init = function(client, server){
+	this.clientSyncHandler = client;
+	this.serverSyncHandler = server;
+	this.clientQueueInterval = setInterval(this.clientQueueManager.bind(this), this.serverIntervalTime);
+	this.serverQueueInterval = setInterval(this.serverQueueManager.bind(this), this.clientIntervalTime);
+
+};
+
+queueSyncManager.prototype.addClientQueue = function(data){
+	this.clientQueue.push(data);
+};
+
+queueSyncManager.prototype.addServerQueue = function(data){
+	this.serverQueue.push(data);
+};
+
+queueSyncManager.prototype.clientQueueManager = function(){
+	clearInterval(this.clientQueueInterval);
+	var that = this;
+	while (this.clientQueue.length > 0){
+		this.serverSyncHandler(this.clientQueue[0])
+		this.clientQueue.shift();
+	}
+	this.clientQueueInterval = setInterval(this.clientQueueManager.bind(this), this.serverIntervalTime);
+};
+
+queueSyncManager.prototype.serverQueueManager = function(){
+	clearInterval(this.serverQueueInterval);
+	var that = this;
+	while (this.serverQueue.length > 0){
+		this.clientSyncHandler(this.serverQueue[0]);
+		this.serverQueue.shift(); 
+	}
+	this.serverQueueInterval = setInterval(this.serverQueueManager.bind(this), this.clientIntervalTime);
+};
+
+window.whiteboardController = function(){
+	this.socket = null;
+	this.whiteboardView = null;
+	this.whiteboardModel = null;
+	this.whiteboardServerEmitter = null;
+	this.whiteboardQueueManager = null;
+	this.whiteboardServerListener = null;
+	this.whiteboardLineCreator = null;
+	this.whiteboardListener = null;
+	this.chatListener = null;
+};
+
+whiteboardController.prototype.init = function(canvas, chatForm, chatMessage, colorSelect, widthSelect, printMessages){
+	this.socket = io.connect('localhost:3000');
+	this.whiteboardView = new whiteboardView();
+	this.whiteboardView.init(canvas);
+	this.chatView = new chatView(printMessages);
+	this.whiteboardModel = new whiteboardModel(this.whiteboardView.draw.bind(this.whiteboardView));
+	this.toolbarModel = new toolbarModel();
+	this.chatModel = new messagesModel(this.chatView.printMessage.bind(this.chatView));
+	this.whiteboardServerEmitter = new serverEmitter(this.socket);
+	this.whiteboardQueueManager = new queueSyncManager();
+	this.whiteboardQueueManager.init(
+		this.whiteboardModel.addLine.bind(this.whiteboardModel), 
+		this.whiteboardServerEmitter.addLine.bind(this.whiteboardServerEmitter)
+	);
+	this.toolbarListener = new toolbarListener();
+	this.toolbarListener.init(
+		colorSelect, 
+		widthSelect, 
+		this.toolbarModel.setColor.bind(this.toolbarModel),
+		this.toolbarModel.setWidth.bind(this.toolbarModel)
+	);
+	var chatHandler = function(message){
+		this.whiteboardServerEmitter.addMessage(message);
+		this.chatModel.addMessage('You: ' + message);
+	};
+	this.chatListener = new chatListener();
+	this.chatListener.init(chatForm, chatMessage, chatHandler.bind(this));
+	this.whiteboardServerListener = new serverListener(this.socket);
+	this.whiteboardServerListener.init(
+		this.whiteboardQueueManager.addServerQueue.bind(this.whiteboardQueueManager),
+		this.chatModel.addMessage.bind(this.chatModel)
+	);
+	this.whiteboardLineCreator = new lineCreator();
+	this.whiteboardLineCreator.init(
+		this.whiteboardQueueManager.addClientQueue.bind(this.whiteboardQueueManager), 
+		this.whiteboardQueueManager.addServerQueue.bind(this.whiteboardQueueManager),
+		this.toolbarModel.getContext.bind(this.toolbarModel)
+	);
+	this.whiteboardListener = new whiteboardListener();
+	this.whiteboardListener.init(
+		canvas,
+		this.whiteboardLineCreator.newLine.bind(this.whiteboardLineCreator),
+		this.whiteboardLineCreator.continueLine.bind(this.whiteboardLineCreator),
+		this.whiteboardLineCreator.endLine.bind(this.whiteboardLineCreator) 
+	);
+	this.whiteboardServerEmitter.newSession(document.location.pathname.split('whiteboard/')[1]);
+};
 });
