@@ -272,6 +272,7 @@ window.queueSyncManager = function(){
 };
 
 queueSyncManager.prototype.init = function(client, server){
+	//
 	this.clientSyncHandler = client;
 	this.serverSyncHandler = server;
 	this.clientQueueInterval = setInterval(this.clientQueueManager.bind(this), this.clientIntervalTime);
