@@ -27,7 +27,7 @@ function initializeModels(dbConn) {
 
 	var Schema = mongoose.Schema;
 	var PointSchema = new Schema({x: Number, y: Number});
-	var LineSchema = new Schema({id: Number, color: String, data: [PointSchema]});
+	var LineSchema = new Schema({id: Number, width: Number, color: String, data: [PointSchema]});
 	var BoardSchema = new Schema({id: Number, data: [LineSchema]});
 	var CounterSchema = new Schema({id: String, count: Number});
 	
@@ -152,7 +152,6 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
  WhiteboardHandler.prototype.handleDrawMessage = function(connHandler, socket) {
 	return function(data) {
 		var lineData = data.line;
-		console.log("Received a line");
 		WhiteBoards.addLine(connHandler.whiteboard, lineData, function(err, whiteboard, line) {
 			if(!err) {
 				// connHandler.whiteboard = whiteboard;
