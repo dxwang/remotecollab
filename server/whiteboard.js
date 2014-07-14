@@ -49,6 +49,34 @@ function initializeModels(dbConn) {
 	});
 }
 module.exports.initializeModels = initializeModels;
+
+function WhiteboardSyncer(socket, data) {
+	this.interval = 250;
+	this.timer = null;
+	this.data = data;
+	this.totalLines = data.length;
+	this.linesSent = 0;
+	this.linesSentPerInterval = 10;
+
+	this.syncFunc = function() {
+		if(this.linesSent < this.totalLines) {
+			var i = 0;
+			var sent = 0;
+			var dataToSend = [];
+			for(i=this.linesSent; i < this.totalLines && i < this.linesSent + this.linesSentPerInterval; i++) {
+				dataToSend.push(this.data[i]);
+				sent++;
+			}
+			this.linesSent += sent;
+			socket.emit('sync', dataToSend);
+		} else {
+			clearInterval(timer);
+		}
+	}
+}
+WhiteboardSyncer.prototype.start = function() {
+	timer = setInterval(this.syncFunc.bind(this), this.interval);
+}
 	
 /* 
  * Route new connections to appropriate whiteboard handler 
@@ -137,17 +165,19 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 	console.log("User " + userId + " joined whiteboard " + this.whiteboard.id);
 	// Send all stored whiteboard data to the user if necessary
 	if(this.whiteboard.data.length > 0) {
-		socket.emit('sync', this.whiteboard.data);
+		var syncer = new WhiteboardSyncer(socket, this.whiteboard.data);
+		syncer.start();
+		// socket.emit('sync', this.whiteboard.data);
 	}
 
 	socket.on('draw', this.handleDrawMessage(this, socket));
 	socket.on('erase', this.handleEraseMessage(this, socket));
 	socket.on('disconnect', this.handleDisconnect(socket));
-	socket.on('chat', function(data) {
+	socket.on('chat', (function(whiteboardId) { return function(data) {
 		data.message = socket.userId + ": " + data.message;
 		console.log(data);
-		socket.broadcast.emit('chat', data)
-	});
+		socket.to(whiteboardId).broadcast.emit('chat', data)};
+	})(this.whiteboard.id));
  }
  WhiteboardHandler.prototype.handleDrawMessage = function(connHandler, socket) {
 	return function(data) {
@@ -181,8 +211,11 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 	};
  }
  
- var WhiteBoards = {
-	nextBoardId: function(callback) {
+var WhiteBoards = new WhiteBoardFuncs();
+function WhiteBoardFuncs() {
+	var lineIds = {};
+ 
+	this.nextBoardId = function(callback) {
 		Counter.findOneAndUpdate({id: "boards"}, {$inc: {count: 1}}, function(err, counter) {
 			if(!err && counter) {
 				callback(counter.count);
@@ -191,7 +224,7 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 			}
 		});
 	},
-	get: function(id, callback) {
+	this.get = function(id, callback) {
 		BoardModel.findOne({"id": id}, function(err, board) {
 			if(!err && board) {
 				callback(board);
@@ -201,7 +234,7 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 			}
 		});
 	},
-	create: function(callback) {
+	this.create = function(callback) {
 		WhiteBoards.nextBoardId(function(whiteboardId) {
 			if(whiteboardId) {
 				var whiteboard = new BoardModel({id: whiteboardId, data: [], lineCount: 0});
@@ -220,23 +253,32 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 			}
 		});
 	},
-	addLine: function(whiteboard,line,callback) {
+	this.addLine = function(whiteboard,line,callback) {
 		var lineModel = new LineModel(line);
 		whiteboard.data.push(lineModel);
+		lineIds[line.id] = whiteboard.data.length - 1;
 		var err;
 		callback(err, whiteboard, lineModel);
 		/*whiteboard.save(function(err, wb) {
 			callback(err, wb, lineModel);
 		});*/
 	},
-	eraseLine: function(whiteboard,id,callback) {
-		whiteboard.data.findOneAndRemove({'id' : id }, function(err, removedLine) {
+	this.eraseLine = function(whiteboard,id,callback) {
+		if(lineIds[line.id]) {
+			whiteboard.data.splice(lineIds[line.id], 1);
+			delete lineIds[line.id];
+			callback(true);
+		} else {
+			callback(false);
+		}
+	
+		/*whiteboard.data.findOneAndRemove({'id' : id }, function(err, removedLine) {
 			if(!err && removedLine && removedLine.id == id) {
 				callback(true);
 			} else {
 				callback(false);
 			}
-		});
+		});*/
 	}
  }
  
