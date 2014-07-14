@@ -77,22 +77,29 @@ chatListener.prototype.submitEvent = function(event){
 window.toolbarListener = function(){
 	this.colorElement = null;
 	this.widthElement = null;
-	this.toolElement = null;
+	this.pencilElement = null;
+	this.eraserElement = null;
 	this.colorEventHandler = null;
 	this.widthEventHandler = null;
 	this.toolEventHandler = null;
+
+	this.activeWidth = null;
 };
 
-toolbarListener.prototype.init = function(colorElement, widthElement, toolElement, colorEventHandler, widthEventHandler, toolEventHandler){
+toolbarListener.prototype.init = function(colorElement, widthElement, pencilElement, eraserElement, colorEventHandler, widthEventHandler, toolEventHandler){
 	this.colorElement = colorElement;
 	this.widthElement = widthElement;
-	this.toolElement = toolElement;
+	this.pencilElement = pencilElement;
+	this.eraserElement = eraserElement;
 	this.colorEventHandler = colorEventHandler;
 	this.widthEventHandler = widthEventHandler;
 	this.toolEventHandler = toolEventHandler;
 	$(this.colorElement).change(this.colorChangeEvent.bind(this));
-	$(this.widthElement).change(this.widthChangeEvent.bind(this));
-	$(this.toolElement).change(this.toolChangeEvent.bind(this));
+	$(this.widthElement).click(this.widthChangeEvent.bind(this));
+	$(this.pencilElement).click(this.toolChangeEvent.bind(this));
+	$(this.eraserElement).click(this.toolChangeEvent.bind(this));
+
+	this.activeWidth = $(this.widthElement).children()[0];
 };
 
 toolbarListener.prototype.colorChangeEvent = function(event){
@@ -101,12 +108,15 @@ toolbarListener.prototype.colorChangeEvent = function(event){
 };
 
 toolbarListener.prototype.widthChangeEvent = function(event){
-	var newWidth = $(this.widthElement).find('option:selected').val();
+	var newWidth = $(event.target).attr('width');
+	$(event.target).parent().addClass('active');
+	$(this.activeWidth).removeClass('active');
+	this.activeWidth = $(event.target).parent();
 	this.widthEventHandler(newWidth);
 };
 
 toolbarListener.prototype.toolChangeEvent = function(event){
-	var newTool = $(this.toolElement).find('option:selected').val();
+	var newTool = $(event.target).attr('tool');
 	this.toolEventHandler(newTool);
 };
 
@@ -433,8 +443,8 @@ window.whiteboardController = function(){
 	this.chatListener = null;
 };
 
-whiteboardController.prototype.init = function(canvas, chatForm, chatMessage, colorSelect, widthSelect, toolSelect, printMessages){
-	this.socket = io.connect('ec2-54-85-43-74.compute-1.amazonaws.com:3000');
+whiteboardController.prototype.init = function(canvas, chatForm, chatMessage, colorSelect, widthSelect, pencilSelect, eraserSelect, printMessages){
+	this.socket = io.connect('localhost:3000');
 	this.userId = null;
 	this.setUserId = function(userId){
 		this.userId = userId;
@@ -517,7 +527,8 @@ whiteboardController.prototype.init = function(canvas, chatForm, chatMessage, co
 	this.toolbarListener.init(
 		colorSelect, 
 		widthSelect, 
-		toolSelect,
+		pencilSelect,
+		eraserSelect,
 		this.toolbarModel.setColor.bind(this.toolbarModel),
 		this.toolbarModel.setWidth.bind(this.toolbarModel),
 		this.toolSelector.changeTool.bind(this.toolSelector)

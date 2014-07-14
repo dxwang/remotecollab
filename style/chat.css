@@ -1,8 +1,7 @@
 #chat {
 	margin: 0;
-	padding: 0;
+	padding: 1em;
 	box-sizing: border-box;
-	font: 13px georgia, serif;
 	width: 20%;
 	outline: 1px solid black;
 	float: right;

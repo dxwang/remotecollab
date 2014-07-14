@@ -37,7 +37,8 @@
 				document.querySelector('#chat_message'),
 				document.querySelector('#line-colour-picker'),
 				document.querySelector('#width-picker'),
-				document.querySelector('#tool-picker'),
+				document.querySelector('#pencil'),
+        document.querySelector('#eraser'),
 				document.querySelector('#messages')
 			);
 		});
@@ -77,18 +78,16 @@
           <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
                 <ul class="nav nav-tabs">
-                  <li class="active"><a href="#" data-toggle="tab">Pencil</a></li>
-                  <li><a href="#" data-toggle="tab">Eraser</a></li>
-            
-
+                  <li class="active"><a id="pencil" tool="pencil" href="#" data-toggle="tab">Pencil</a></li>
+                  <li><a id="eraser" tool="eraser" href="#" data-toggle="tab">Eraser</a></li>
               <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">Width <span class="caret"></span></a>
-                <ul class="dropdown-menu" role="menu">
-                  <li class="active"><a href="#">1</a></li>
-                  <li><a href="#">2</a></li>
-                  <li><a href="#">3</a></li>
-                  <li><a href="#">4</a></li>
-                  <li><a href="#">5</a></li>
+                <ul id="width-picker" class="dropdown-menu" role="menu">
+                  <li class="active"><a width="1" href="#">1</a></li>
+                  <li><a width="2" href="#">2</a></li>
+                  <li><a width="3" href="#">3</a></li>
+                  <li><a width="4" href="#">4</a></li>
+                  <li><a width="5" href="#">5</a></li>
 
                 </ul>
 
@@ -100,11 +99,6 @@
 	      </li>
 		</ul>
 
-            </ul>
-            <ul class="nav navbar-nav navbar-right">
-              <li class="active"><a href="./">Default</a></li>
-              <li><a href="../navbar-static-top/">Static top</a></li>
-              <li><a href="../navbar-fixed-top/">Fixed top</a></li>
             </ul>
           </div><!--/.nav-collapse -->
         </div><!--/.container-fluid -->
@@ -119,7 +113,7 @@
 
 		<form id="chat_form">
 			<input id="chat_message" type="text" autocomplete="off">
-			<button>Send</button>
+			<button type="button" class="btn btn-sm btn-info">Send</button>
 		</form>
 	</div>
     </div> <!-- container -->
