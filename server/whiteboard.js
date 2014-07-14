@@ -264,9 +264,9 @@ function WhiteBoardFuncs() {
 		});*/
 	},
 	this.eraseLine = function(whiteboard,id,callback) {
-		if(lineIds[line.id]) {
-			whiteboard.data.splice(lineIds[line.id], 1);
-			delete lineIds[line.id];
+		if(lineIds[id]) {
+			whiteboard.data.splice(lineIds[id], 1);
+			delete lineIds[id];
 			callback(true);
 		} else {
 			callback(false);
