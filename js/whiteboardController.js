@@ -282,6 +282,7 @@ serverListener.prototype.init = function(user, lineAdd, lineRemove, message){
 	this.lineCollectionSync();
 	this.lineSync();
 	this.messageSync();
+	this.lineRemove();
 };
 
 serverListener.prototype.joined = function(){
@@ -341,7 +342,6 @@ serverEmitter.prototype.addMessage = function(message){
 };
 
 serverEmitter.prototype.removeLine = function(id){
-	console.log(id);
 	this.socket.emit('erase', {'id': id});
 }
 
@@ -437,7 +437,6 @@ whiteboardController.prototype.init = function(canvas, chatForm, chatMessage, co
 	this.socket = io.connect('localhost:3000');
 	this.userId = null;
 	this.setUserId = function(userId){
-		console.log(userId);
 		this.userId = userId;
 	};
 	this.getUserId = function(){

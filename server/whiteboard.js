@@ -51,7 +51,7 @@ function initializeModels(dbConn) {
 module.exports.initializeModels = initializeModels;
 
 function WhiteboardSyncer(socket, data) {
-	this.interval = 250;
+	this.interval = 50;
 	this.timer = null;
 	this.data = data;
 	this.totalLines = data.length;
@@ -175,7 +175,6 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 	socket.on('disconnect', this.handleDisconnect(socket));
 	socket.on('chat', (function(whiteboardId) { return function(data) {
 		data.message = socket.userId + ": " + data.message;
-		console.log(data);
 		socket.to(whiteboardId).broadcast.emit('chat', data)};
 	})(this.whiteboard.id));
  }
@@ -195,7 +194,7 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 	return function(data) {
 		WhiteBoards.eraseLine(connHandler.whiteboard, data.id, function(success) {
 			if(success) {
-				socket.emit('erase', { 'id' : data.id });
+				// socket.emit('erase', { 'id' : data.id });
 				socket.to(connHandler.whiteboard.id).emit('erase', { 'id' : data.id });
 			} else {
 				console.log("Error erasing line (" + data.id + ") from whiteboard " + connHandler.whiteboard.id);
@@ -213,8 +212,6 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
  
 var WhiteBoards = new WhiteBoardFuncs();
 function WhiteBoardFuncs() {
-	var lineIds = {};
- 
 	this.nextBoardId = function(callback) {
 		Counter.findOneAndUpdate({id: "boards"}, {$inc: {count: 1}}, function(err, counter) {
 			if(!err && counter) {
@@ -256,7 +253,6 @@ function WhiteBoardFuncs() {
 	this.addLine = function(whiteboard,line,callback) {
 		var lineModel = new LineModel(line);
 		whiteboard.data.push(lineModel);
-		lineIds[line.id] = whiteboard.data.length - 1;
 		var err;
 		callback(err, whiteboard, lineModel);
 		/*whiteboard.save(function(err, wb) {
@@ -264,9 +260,15 @@ function WhiteBoardFuncs() {
 		});*/
 	},
 	this.eraseLine = function(whiteboard,id,callback) {
-		if(lineIds[id]) {
-			whiteboard.data.splice(lineIds[id], 1);
-			delete lineIds[id];
+		var index = -1;
+		for(var i=0; i < whiteboard.data.length; i++) {
+			if(whiteboard.data[i].id === id) {
+				index = i;
+			}
+		}
+
+		if(index >= 0) {
+			whiteboard.data.splice(index, 1);
 			callback(true);
 		} else {
 			callback(false);

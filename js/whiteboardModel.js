@@ -2,12 +2,9 @@ $(document).ready(function(){
 
 /**
  * Line Model
- * NEEDS A BUNCH OF CONTEXT METHODS
  */
 window.lineModel = function(serverId, points, context){
-	console.log(serverId);
-	this.id = serverId || '';
-	this.id += Date.now();
+	this.id = serverId || Date.now();
 	this.points = points || [];
 	this.context = context || {color: "black", width: "1"};
 };
@@ -100,7 +97,7 @@ whiteboardModel.prototype.getCurrentLine = function(){
 };
 
 whiteboardModel.prototype.newLine = function(context, userId) {
-	this.currentLine = new lineModel(userId);
+	this.currentLine = new lineModel(userId + Date.now());
 	this.currentLine.setContext(context);
 };
 
@@ -124,12 +121,25 @@ whiteboardModel.prototype.addLine = function(data){
 	this.draw(line.points, line.context);
 };
 
+whiteboardModel.prototype.redraw = function(){
+	this.clear();
+	for (var i=0;i<this.lines.length;i++){
+		var line = this.lines[i];
+		this.draw(line.points, line.context);
+	}
+}
+
 whiteboardModel.prototype.removeLine = function(data){
+	var redraw = false;
 	for (var i=0;i<this.lines.length;i++){
 		if (this.lines[i].id === data){
 			this.lines.splice(i, 1);
+			redraw = true;
 			break;
 		}
+	}
+	if (redraw){
+		this.redraw();
 	}
 };
 
@@ -150,13 +160,8 @@ whiteboardModel.prototype.removeLinesInBounds = function(top, bottom, left, righ
 		}
 	}
 	if (redraw){
-		this.clear();
-		for (var k=0;k<this.lines.length;k++){
-			var line = this.lines[k];
-			this.draw(line.points, line.context);
-		}
+		this.redraw();
 	}
-	
 	return removedLines;
 }
 });
