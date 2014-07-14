@@ -173,11 +173,11 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 	socket.on('draw', this.handleDrawMessage(this, socket));
 	socket.on('erase', this.handleEraseMessage(this, socket));
 	socket.on('disconnect', this.handleDisconnect(socket));
-	socket.on('chat', function(data) {
+	socket.on('chat', (function(whiteboardId) { return function(data) {
 		data.message = socket.userId + ": " + data.message;
 		console.log(data);
-		socket.broadcast.emit('chat', data)
-	});
+		socket.to(whiteboardId).broadcast.emit('chat', data)};
+	})(this.whiteboard.id));
  }
  WhiteboardHandler.prototype.handleDrawMessage = function(connHandler, socket) {
 	return function(data) {
