@@ -8,7 +8,8 @@
 	height: 100%;
 	width: 80%;
 	z-index: 0;
-	overflow: none;
+	overflow: hidden;
+
 	float: left;
 }
 

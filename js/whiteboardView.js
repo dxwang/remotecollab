@@ -25,7 +25,7 @@ whiteboardView.prototype.init = function(canvas) {
 whiteboardView.prototype.draw = function(line, lineContext){
 	if (lineContext !== null){
 		this.context.lineWidth = lineContext.width || this.context.lineWidth;
-		this.context.strokeStyle = this.colorMap[lineContext.color] || this.context.strokeStyle;
+		this.context.strokeStyle = lineContext.color || this.context.strokeStyle;
 	}
 
 	if (line !== null && line.length > 0){

@@ -96,8 +96,8 @@ toolbarListener.prototype.init = function(colorElement, widthElement, toolElemen
 };
 
 toolbarListener.prototype.colorChangeEvent = function(event){
-	var newColor = $(this.colorElement).find('option:selected').val();
-	this.colorEventHandler(newColor);
+	var newColor = $(this.colorElement).val();
+	this.colorEventHandler("#" + newColor);
 };
 
 toolbarListener.prototype.widthChangeEvent = function(event){

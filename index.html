@@ -35,7 +35,7 @@
 				document.querySelector('#canvas'),
 				document.querySelector('#chat_form'),
 				document.querySelector('#chat_message'),
-				document.querySelector('#color-picker'),
+				document.querySelector('#line-colour-picker'),
 				document.querySelector('#width-picker'),
 				document.querySelector('#tool-picker'),
 				document.querySelector('#messages')
@@ -76,25 +76,29 @@
           </div>
           <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
-              <li class="active"><a href="#">Pencil</a></li>
-              <li><a href="#">Eraser</a></li>
+                <ul class="nav nav-tabs">
+                  <li class="active"><a href="#" data-toggle="tab">Pencil</a></li>
+                  <li><a href="#" data-toggle="tab">Eraser</a></li>
+            
+
               <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">Width <span class="caret"></span></a>
                 <ul class="dropdown-menu" role="menu">
-                  <li><a href="#">1</a></li>
+                  <li class="active"><a href="#">1</a></li>
                   <li><a href="#">2</a></li>
                   <li><a href="#">3</a></li>
                   <li><a href="#">4</a></li>
                   <li><a href="#">5</a></li>
 
                 </ul>
+
               </li>
 
 
 	      <li>
 		<input type="text" value="000" id="line-colour-picker" class="pick-a-color form-control">
 	      </li>
-
+		</ul>
 
             </ul>
             <ul class="nav navbar-nav navbar-right">
@@ -108,27 +112,6 @@
 
 	<div id="canvas-view">
 		<canvas id="canvas"></canvas>
-	</div>
-
-	<div id="toolbar">
-		<select id="tool-picker">
-			<option value="pencil" selected="selected">Pencil</option>
-			<option value="eraser">Eraser</option>
-		</select>
-		<select id="color-picker">
-			<option value="black" selected="selected">Black</option>
-			<option value="red">Red</option>
-			<option value="green">Green</option>
-			<option value="blue">Blue</option>
-			<option value="yellow">Yellow</option>
-		</select>
-		<select id="width-picker">
-			<option value="1">1</option>
-			<option value="2">2</option>
-			<option value="3" selected="selected">3</option>
-			<option value="4">4</option>
-			<option value="5">5</option>
-		</select>
 	</div>
 
 	<div id="chat">
