@@ -1,4 +1,0 @@
-remotecollab
-============
-
-Online Interactive Whiteboard 

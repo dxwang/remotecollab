@@ -96,8 +96,8 @@ toolbarListener.prototype.init = function(colorElement, widthElement, toolElemen
 };
 
 toolbarListener.prototype.colorChangeEvent = function(event){
-	var newColor = $(this.colorElement).find('option:selected').val();
-	this.colorEventHandler(newColor);
+	var newColor = $(this.colorElement).val();
+	this.colorEventHandler("#" + newColor);
 };
 
 toolbarListener.prototype.widthChangeEvent = function(event){
@@ -434,7 +434,7 @@ window.whiteboardController = function(){
 };
 
 whiteboardController.prototype.init = function(canvas, chatForm, chatMessage, colorSelect, widthSelect, toolSelect, printMessages){
-	this.socket = io.connect('localhost:3000');
+	this.socket = io.connect('ec2-54-85-43-74.compute-1.amazonaws.com:3000');
 	this.userId = null;
 	this.setUserId = function(userId){
 		this.userId = userId;

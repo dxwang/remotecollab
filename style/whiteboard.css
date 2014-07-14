@@ -8,8 +8,17 @@
 	height: 100%;
 	width: 80%;
 	z-index: 0;
-	overflow: scroll;
+	overflow: hidden;
+
 	float: left;
+}
+
+#line-colour-picker {
+	width: 1px;
+}
+
+.pick-a-color-markup {
+	width: 1px;
 }
 
 #toolbar {

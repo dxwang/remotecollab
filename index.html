@@ -2,53 +2,116 @@
 <html>
 <head>
     <title>HTML 5 Whiteboard</title>
+   
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="x-ua-compatible" content="IE=10">
+ 
+    <!--Style Sheets-->
     <link rel="stylesheet" type="text/css" href="/style/whiteboard.css"/>
     <link rel="stylesheet" type="text/css" href="/style/chat.css"/>
+    
+    <!-- Bootstrap core CSS -->
+    <link href="/style/bootstrap-3.0.0.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="/style/pick-a-color-1.2.3.min.css">
+    <!-- Custom styles for this template -->
+    <link href="/style/navbar.css" rel="stylesheet">
+	
+	<!--Scripts-->
     <script src="/socket.io/socket.io.js"></script>
     <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
 	<script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+
+	<!--Whiteboard-->
     <script src="/js/whiteboardModel.js"></script>
-	<script src="/js/whiteboardController.js"></script>
-	<script src="/js/whiteboardView.js"></script>
-	<script type="text/javascript">
+    <script src="/js/whiteboardController.js"></script>
+    <script src="/js/whiteboardView.js"></script>
+    <script src="/js/chat.js"></script>
+    <script type="text/javascript">
 		$(document).ready(function(){
 			var whiteboard = new whiteboardController();
 			whiteboard.init(
 				document.querySelector('#canvas'),
 				document.querySelector('#chat_form'),
 				document.querySelector('#chat_message'),
-				document.querySelector('#color-picker'),
+				document.querySelector('#line-colour-picker'),
 				document.querySelector('#width-picker'),
 				document.querySelector('#tool-picker'),
 				document.querySelector('#messages')
 			);
 		});
 	</script>
+
+  	<script type="text/javascript">
+   	  $(document).ready(function () {
+    	    $(".pick-a-color").pickAColor({
+
+  	      showHexInput            : false,
+  	      showSpectrum	      : false,
+  	      showAdvanced	      : false,
+	      showSavedColors	      : false
+
+	    });
+   	});
+
+  </script>
 </head>
 <body>
+
+      <div class="container"> 
+
+
+      <!-- Static navbar -->
+      <div class="navbar navbar-default" role="navigation">
+        <div class="container-fluid">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">RemoteCollab</a>
+          </div>
+          <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <ul class="nav nav-tabs">
+                  <li class="active"><a href="#" data-toggle="tab">Pencil</a></li>
+                  <li><a href="#" data-toggle="tab">Eraser</a></li>
+            
+
+              <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Width <span class="caret"></span></a>
+                <ul class="dropdown-menu" role="menu">
+                  <li class="active"><a href="#">1</a></li>
+                  <li><a href="#">2</a></li>
+                  <li><a href="#">3</a></li>
+                  <li><a href="#">4</a></li>
+                  <li><a href="#">5</a></li>
+
+                </ul>
+
+              </li>
+
+
+	      <li>
+		<input type="text" value="000" id="line-colour-picker" class="pick-a-color form-control">
+	      </li>
+		</ul>
+
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+              <li class="active"><a href="./">Default</a></li>
+              <li><a href="../navbar-static-top/">Static top</a></li>
+              <li><a href="../navbar-fixed-top/">Fixed top</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div><!--/.container-fluid -->
+      </div>
+
 	<div id="canvas-view">
 		<canvas id="canvas"></canvas>
-	</div>
-
-	<div id="toolbar">
-		<select id="tool-picker">
-			<option value="pencil" selected="selected">Pencil</option>
-			<option value="eraser">Eraser</option>
-		</select>
-		<select id="color-picker">
-			<option value="black" selected="selected">Black</option>
-			<option value="red">Red</option>
-			<option value="green">Green</option>
-			<option value="blue">Blue</option>
-			<option value="yellow">Yellow</option>
-		</select>
-		<select id="width-picker">
-			<option value="1">1</option>
-			<option value="2">2</option>
-			<option value="3" selected="selected">3</option>
-			<option value="4">4</option>
-			<option value="5">5</option>
-		</select>
 	</div>
 
 	<div id="chat">
@@ -59,6 +122,13 @@
 			<button>Send</button>
 		</form>
 	</div>
+    </div> <!-- container -->
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/tinycolor-0.9.15.min.js"></script>
+    <script src="/js/pick-a-color-1.2.3.min.js"></script>
 
 </body>
 </html>
