@@ -57,17 +57,25 @@ function WhiteboardSyncer(socket, data) {
 	this.totalLines = data.length;
 	this.linesSent = 0;
 	this.linesSentPerInterval = 10;
-	
+
 	this.syncFunc = function() {
 		if(this.linesSent < this.totalLines) {
-			var i;
-			var dataToSend;
+			var i = 0;
+			var sent = 0;
+			var dataToSend = [];
 			for(i=this.linesSent; i < this.totalLines && i < this.linesSent + this.linesSentPerInterval; i++) {
 				dataToSend.push(this.data[i]);
+				sent++;
 			}
-			this.linesSent = this.linesSent + i;
+			this.linesSent += sent;
+			socket.emit('sync', dataToSend);
+		} else {
+			clearInterval(timer);
 		}
 	}
+}
+WhiteboardSyncer.prototype.start = function() {
+	timer = setInterval(this.syncFunc.bind(this), this.interval);
 }
 	
 /* 
@@ -157,7 +165,9 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 	console.log("User " + userId + " joined whiteboard " + this.whiteboard.id);
 	// Send all stored whiteboard data to the user if necessary
 	if(this.whiteboard.data.length > 0) {
-		socket.emit('sync', this.whiteboard.data);
+		var syncer = new WhiteboardSyncer(socket, this.whiteboard.data);
+		syncer.start();
+		// socket.emit('sync', this.whiteboard.data);
 	}
 
 	socket.on('draw', this.handleDrawMessage(this, socket));
