@@ -40,6 +40,10 @@ whiteboardView.prototype.draw = function(line, lineContext){
 	}
 };
 
+whiteboardView.prototype.clear = function(){
+	this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+};
+
 window.chatView = function(chat){
 	this.chat = chat;
 };
