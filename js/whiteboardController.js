@@ -388,7 +388,7 @@ window.whiteboardController = function(){
 };
 
 whiteboardController.prototype.init = function(canvas, chatForm, chatMessage, colorSelect, widthSelect, toolSelect, printMessages){
-	this.socket = io.connect('localhost:3000');
+	this.socket = io.connect('ec2-54-85-43-74.compute-1.amazonaws.com:3000');
 
 	this.whiteboardView = new whiteboardView();
 	this.whiteboardView.init(canvas);

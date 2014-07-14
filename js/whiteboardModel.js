@@ -1,5 +1,5 @@
 $(document).ready(function(){
-
+/*
 window.whiteboardModel = {
 	currentLine: [],
 	currentLineId: null,
@@ -65,6 +65,8 @@ window.whiteboardModel = {
 		this.currentLineId = null;
 	}
 };
+
+*/
 /**
  * Line Model
  * NEEDS A BUNCH OF CONTEXT METHODS
