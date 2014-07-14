@@ -211,8 +211,11 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 	};
  }
  
- var WhiteBoards = {
-	nextBoardId: function(callback) {
+var WhiteBoards = new WhiteBoardFuncs();
+function WhiteBoardFuncs() {
+	var lineIds = {};
+ 
+	this.nextBoardId = function(callback) {
 		Counter.findOneAndUpdate({id: "boards"}, {$inc: {count: 1}}, function(err, counter) {
 			if(!err && counter) {
 				callback(counter.count);
@@ -221,7 +224,7 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 			}
 		});
 	},
-	get: function(id, callback) {
+	this.get = function(id, callback) {
 		BoardModel.findOne({"id": id}, function(err, board) {
 			if(!err && board) {
 				callback(board);
@@ -231,7 +234,7 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 			}
 		});
 	},
-	create: function(callback) {
+	this.create = function(callback) {
 		WhiteBoards.nextBoardId(function(whiteboardId) {
 			if(whiteboardId) {
 				var whiteboard = new BoardModel({id: whiteboardId, data: [], lineCount: 0});
@@ -250,23 +253,32 @@ module.exports.NewConnectionHandler = NewConnectionHandler;
 			}
 		});
 	},
-	addLine: function(whiteboard,line,callback) {
+	this.addLine = function(whiteboard,line,callback) {
 		var lineModel = new LineModel(line);
 		whiteboard.data.push(lineModel);
+		lineIds[line.id] = whiteboard.data.length - 1;
 		var err;
 		callback(err, whiteboard, lineModel);
 		/*whiteboard.save(function(err, wb) {
 			callback(err, wb, lineModel);
 		});*/
 	},
-	eraseLine: function(whiteboard,id,callback) {
-		whiteboard.data.findOneAndRemove({'id' : id }, function(err, removedLine) {
+	this.eraseLine = function(whiteboard,id,callback) {
+		if(lineIds[line.id]) {
+			whiteboard.data.splice(lineIds[line.id], 1);
+			delete lineIds[line.id];
+			callback(true);
+		} else {
+			callback(false);
+		}
+	
+		/*whiteboard.data.findOneAndRemove({'id' : id }, function(err, removedLine) {
 			if(!err && removedLine && removedLine.id == id) {
 				callback(true);
 			} else {
 				callback(false);
 			}
-		});
+		});*/
 	}
  }
  
